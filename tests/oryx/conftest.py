@@ -11,9 +11,9 @@ from prefect.filesystems import LocalFileSystem
 from prefect.tasks import Task
 
 from borderlands.oryx.oryx_parser.article import (
-    ArticleParser,
+    RUSSIA_DATA_SECTION_INDEX,
     UKRAINE_DATA_SECTION_INDEX,
-    RUSSIA_DATA_SECTION_INDEX
+    ArticleParser,
 )
 from borderlands.utilities.blocks import create_child_bucket, task_persistence_subfolder
 
@@ -57,14 +57,19 @@ def oryx_evidence_urls(test_data_path: Path) -> list[str]:
 @pytest.fixture
 def oryx_flag_urls(test_data_path: Path) -> list[str]:
     """URLs of the Oryx flags."""
-    with open(test_data_path / "oryx" / "country_of_production_flag_urls.txt", "r") as fo:
+    with open(
+        test_data_path / "oryx" / "country_of_production_flag_urls.txt", "r"
+    ) as fo:
         return [line.strip() for line in fo.readlines()]
 
 
 @pytest.fixture
 def flag_url_mapper(test_data_path: Path) -> dict[str, str]:
     """URLs of the Oryx flags."""
-    with open(test_data_path / "oryx" / "assets" / "country_of_production_url_mapping.json", "r") as fo:
+    with open(
+        test_data_path / "oryx" / "assets" / "country_of_production_url_mapping.json",
+        "r",
+    ) as fo:
         data = json.load(fo)
         return {k: v["Alpha-3"] for k, v in data.items()}
 
@@ -88,6 +93,7 @@ def mock_oryx_bucket(bucket_dummy_path: Path, monkeypatch: MonkeyPatch):
 
     # Oryx
     from borderlands.oryx import blocks
+
     oryx_bucket = create_child_bucket("oryx", "-oryx", bucket, save=True)
     landing_bucket = create_child_bucket("landing", "-landing", oryx_bucket)
     assets_bucket = create_child_bucket("assets", "-assets", oryx_bucket)
@@ -99,6 +105,7 @@ def mock_oryx_bucket(bucket_dummy_path: Path, monkeypatch: MonkeyPatch):
     monkeypatch.setattr(blocks, "persistence_bucket", persistence_bucket)
 
     from borderlands.oryx import extract, stage, transform
+
     # Update tasks using the persistence bucket as result_storage
 
     for module in (extract, stage, transform):
@@ -120,9 +127,15 @@ def mock_oryx_page_request(test_data_path: Path, monkeypatch: MonkeyPatch):
         """Mocks the extract_pages function to use a file in the tests/data directory."""
         folder = test_data_path / "oryx" / "pages"
         filename: str | None = None
-        if url == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-equipment.html":
+        if (
+            url
+            == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-equipment.html"
+        ):
             filename = "russia.html"
-        elif url == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html":
+        elif (
+            url
+            == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html"
+        ):
             filename = "ukraine.html"
 
         if filename is None:
@@ -162,7 +175,7 @@ def mock_asset_request(test_data_path: Path, monkeypatch):
 def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> ArticleParser:
     """An `ArticleParser` object."""
     body = oryx_ukraine_webpage.find(
-        attrs={'class': 'post-body entry-content', 'itemprop': 'articleBody'}
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
     yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
 
@@ -171,7 +184,7 @@ def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> ArticleParser:
 def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> ArticleParser:
     """An `ArticleParser` object."""
     body = oryx_russia_webpage.find(
-        attrs={'class': 'post-body entry-content', 'itemprop': 'articleBody'}
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
     yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
 

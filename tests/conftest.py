@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 from prefect.testing.utilities import prefect_test_harness
 
-
 TESTS_PATH: Path = Path(__file__).parent
 
 
@@ -23,6 +22,7 @@ def test_data_path() -> Path:
     """Path to the test data directory."""
     return TESTS_PATH / "data"
 
+
 # Sets the test harness so prefect flow tests are not recorded in the Orion
 # database.
 #
@@ -33,8 +33,3 @@ def with_test_harness():
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
         yield
-
-
-# pytest_plugins = [
-#     "tests.oryx.conftest",
-# ]

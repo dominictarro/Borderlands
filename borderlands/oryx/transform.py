@@ -13,46 +13,48 @@ import pandas as pd
 from prefect import task
 from prefect.serializers import CompressedJSONSerializer
 
-from . import blocks
-from .oryx_parser import article
 from ..utilities.blocks import task_persistence_subfolder
 from ..utilities.loggers import get_prefect_or_default_logger
+from . import blocks
+from .oryx_parser import article
 
 
 class Status(enum.Enum):
     """Statuses the equipment may be in."""
-    ABANDONED = 'abandoned'
-    CAPTURED = 'captured'
-    DAMAGED = 'damaged'
-    DESTROYED = 'destroyed'
-    SCUTTLED = 'scuttled'
-    STRIPPED = 'stripped'
-    SUNK = 'sunk'
+
+    ABANDONED = "abandoned"
+    CAPTURED = "captured"
+    DAMAGED = "damaged"
+    DESTROYED = "destroyed"
+    SCUTTLED = "scuttled"
+    STRIPPED = "stripped"
+    SUNK = "sunk"
     # TODO - perhaps abstract to 'repaired'? Or 'recovered'?
-    RAISED = 'raised'
+    RAISED = "raised"
 
 
 # Keywords found in the loss descriptions and the status
 # they are associated with
 KEYWORD_STATUS_MAP = {
-    'captured': Status.CAPTURED,
-    'destroyed': Status.DESTROYED,
-    'damaged': Status.DAMAGED,
+    "captured": Status.CAPTURED,
+    "destroyed": Status.DESTROYED,
+    "damaged": Status.DAMAGED,
     # Typo that should be accounted for
-    'damagd': Status.DAMAGED,
-    'abandoned': Status.ABANDONED,
+    "damagd": Status.DAMAGED,
+    "abandoned": Status.ABANDONED,
     # Typo that should be accounted for
-    'abanonded': Status.ABANDONED,
-    'scuttled': Status.SCUTTLED,
-    'stripped': Status.STRIPPED,
-    'sunk': Status.SUNK,
-    'raised': Status.RAISED,
+    "abanonded": Status.ABANDONED,
+    "scuttled": Status.SCUTTLED,
+    "stripped": Status.STRIPPED,
+    "sunk": Status.SUNK,
+    "raised": Status.RAISED,
 }
 
 
 # This will be important for establishing the media processor / page parser
 class EvidenceSource(enum.Enum):
     """Source of the confirmation URL."""
+
     POST_IMG = "postimg"
     TWITTER = "twitter"
     OTHER = "other"
@@ -73,7 +75,7 @@ DOMAIN_SOURCE_MAP = {
 @task(persist_result=False)
 def convert_to_records(df: pd.DataFrame) -> list[dict]:
     """Converts a `DataFrame` to a list of dictionaries.
-    
+
     Parameters
     ----------
     df : pd.DataFrame
@@ -91,12 +93,10 @@ def convert_to_records(df: pd.DataFrame) -> list[dict]:
 @task(
     persist_result=True,
     # result_storage set by wrapper
-    result_serializer=CompressedJSONSerializer()
+    result_serializer=CompressedJSONSerializer(),
 )
 def parse_equipment_losses_page(
-    body: bytes | str,
-    country: str,
-    as_of_date: datetime
+    body: bytes | str, country: str, as_of_date: datetime
 ) -> dict[str, Any]:
     """Transforms equipment losses from HTML bytes into a JSON of equipment
     losses for the country.
@@ -123,15 +123,15 @@ def parse_equipment_losses_page(
     elif country == "Ukraine":
         data_section_index = article.UKRAINE_DATA_SECTION_INDEX
     else:
-        raise ValueError(
-            f"There is no equipment losses parser for '{country!r}'"
-        )
+        raise ValueError(f"There is no equipment losses parser for '{country!r}'")
 
     soup: bs4.BeautifulSoup = bs4.BeautifulSoup(body, features="html.parser")
     body = soup.find(
-        attrs={'class': 'post-body entry-content', 'itemprop': 'articleBody'}
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    parser = article.ArticleParser(body, data_section_index, get_prefect_or_default_logger())
+    parser = article.ArticleParser(
+        body, data_section_index, get_prefect_or_default_logger()
+    )
     cases = list(parser.parse())
 
     logger.info("%s cases parsed for %s", len(cases), country)
@@ -147,7 +147,7 @@ def tabulate_loss_cases(data: dict) -> pd.DataFrame:
     data : dict
         Dictionary containing the loss cases, country name, and date the data
         was extracted
-    
+
     Returns
     -------
     pd.DataFrame
@@ -200,14 +200,12 @@ def assign_status(df: pd.DataFrame) -> pd.DataFrame:
         df[status.value] = None
 
         column_set.add(status.value)
-        df.loc[
-            df['description'].str.contains(keyword), status.value
-        ] = status.value
+        df.loc[df["description"].str.contains(keyword), status.value] = status.value
 
     columns = list(column_set)
     # Filters the row's individual status columns to only include those that
     # have been set (a.k.a. are not null)
-    # 
+    #
     #   | captured   | destroyed   | damaged
     # 0 | NA         | NA          | "damaged"
     # 1 | "captured" | NA          | "damaged"
@@ -220,7 +218,7 @@ def assign_status(df: pd.DataFrame) -> pd.DataFrame:
     # 1 | ["captured", "damaged"]
     # 2 | ["captured", "destroyed"]
     #
-    df['status'] = df[columns].apply(
+    df["status"] = df[columns].apply(
         lambda s: list(set(filter(lambda x: pd.isna(x) is False, s))), axis=1
     )
     df = df.drop(columns=columns)
@@ -229,8 +227,7 @@ def assign_status(df: pd.DataFrame) -> pd.DataFrame:
 
 @task(persist_result=False)
 def assign_country_of_production(
-    df: pd.DataFrame,
-    mapper: dict[str, str]
+    df: pd.DataFrame, mapper: dict[str, str]
 ) -> pd.DataFrame:
     """Uses the mapper to determine the national origin of the equipment.
 
@@ -246,8 +243,7 @@ def assign_country_of_production(
     pd.DataFrame
         `DataFrame` with a country_of_production column
     """
-    df["country_of_production"] = df["country_of_production_flag_url"]\
-        .replace(mapper)
+    df["country_of_production"] = df["country_of_production_flag_url"].replace(mapper)
 
     # Report unmapped URLs
     unmapped = ~df["country_of_production"].isin(mapper.values())
@@ -258,16 +254,12 @@ def assign_country_of_production(
         logger = get_prefect_or_default_logger()
         # Get a list of unmapped URLs
         urls = list(df[unmapped]["country_of_production_flag_url"].unique())
-        logger.warning(
-            "Unmapped URLs detected: count=%s values=%s", len(urls), urls
-        )
+        logger.warning("Unmapped URLs detected: count=%s values=%s", len(urls), urls)
     return df
 
 
 @task(persist_result=False)
-def assign_evidence_source(
-    df: pd.DataFrame
-) -> pd.DataFrame:
+def assign_evidence_source(df: pd.DataFrame) -> pd.DataFrame:
     """Uses the mapper to determine the domain and source of the evidence.
 
     Parameters
@@ -280,9 +272,7 @@ def assign_evidence_source(
     pd.DataFrame
         `DataFrame` with a domain and evidence_source column
     """
-    df["domain"] = df["evidence_url"].apply(
-        lambda url: urlparse(url).netloc
-    )
+    df["domain"] = df["evidence_url"].apply(lambda url: urlparse(url).netloc)
     df["evidence_source"] = df["domain"].replace(DOMAIN_SOURCE_MAP)
 
     # Set values that were not explicitly mapped to OTHER
@@ -295,9 +285,7 @@ def assign_evidence_source(
         logger = get_prefect_or_default_logger()
         domains = list(df[unmapped]["domain"].unique())
         logger.warning(
-            "Unmapped domains detected: count=%s values=%s",
-            len(domains),
-            domains
+            "Unmapped domains detected: count=%s values=%s", len(domains), domains
         )
 
     return df

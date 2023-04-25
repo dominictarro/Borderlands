@@ -30,7 +30,7 @@ def get_asset(asset_name: str) -> str:
 @task
 def get_country_of_production_url_mapper() -> Dict[str, str]:
     """Gets the country of production URL mapper from the assets folder.
-    
+
     Structure is like
 
     ```json

@@ -2,12 +2,12 @@
 Module for parsing equipment model HTML trees.
 """
 from __future__ import annotations
-import string
 
+import string
 import traceback
 from typing import Generator
 
-from ...utilities.misc import series_splitter, parse_alphabet_items
+from ...utilities.misc import parse_alphabet_items
 from .base import ParserBase
 
 
@@ -19,7 +19,7 @@ class EvidenceParser(ParserBase):
     @property
     def evidence_url(self) -> str | None:
         """Returns the 'href' of the <a> tag."""
-        return self.tag.attrs.get('href')
+        return self.tag.attrs.get("href")
 
     @property
     def text(self) -> str:
@@ -34,7 +34,7 @@ class EvidenceParser(ParserBase):
         #     - '{ids}, {statuses}'
         #     - '{ids}, with {causes}, {statuses}'
         #     - '{ids}, {statuses} by {causes}'
-        return self.tag.text.strip('()')
+        return self.tag.text.strip("()")
 
     def parse(self) -> Generator[dict, None, None]:
         """Parses the <a> tag for the confirmed losses provided by the evidence0.
@@ -50,10 +50,6 @@ class EvidenceParser(ParserBase):
         numbers = parse_alphabet_items(text, alphabet=string.digits)
         for id_ in set(numbers):
             try:
-                yield dict(
-                    evidence_url=self.evidence_url,
-                    description=text,
-                    id_=id_
-                )
+                yield dict(evidence_url=self.evidence_url, description=text, id_=id_)
             except Exception:
                 self.logger.error(traceback.format_exc())

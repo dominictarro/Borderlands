@@ -6,15 +6,12 @@ from __future__ import annotations
 import string
 from typing import Callable, List
 
-
 ALPHANUMERICS = string.ascii_letters + string.digits
 
 
 def parse_alphabet_items(
-        text: str,
-        alphabet: str = ALPHANUMERICS,
-        exclude: bool = False
-    ) -> List[str]:
+    text: str, alphabet: str = ALPHANUMERICS, exclude: bool = False
+) -> List[str]:
     """Parses substrings whose characters are found in `alphabet`.
 
     :param text:        Text to iterate
@@ -30,15 +27,15 @@ def parse_alphabet_items(
     >>> parse_alphabet_items("12, 34a 5b6 7", alphabet=string.digits)
     >>> ['12', '34', '5', '6', '7']
     """
-    tail_pointer_logic: Callable[[str], bool] = lambda char: (
-            char not in alphabet)
-    head_pointer_logic: Callable[[str], bool] = lambda char: (
-            char in alphabet)
+    tail_pointer_logic: Callable[[str], bool] = lambda char: (char not in alphabet)
+    head_pointer_logic: Callable[[str], bool] = lambda char: (char in alphabet)
 
     # Switch head and tail pointer checks if excluding
     if exclude:
         tail_pointer_logic, head_pointer_logic = (
-                head_pointer_logic, tail_pointer_logic)
+            head_pointer_logic,
+            tail_pointer_logic,
+        )
 
     items: List[str] = []
     tail, head = 0, 0
@@ -67,7 +64,7 @@ def parse_alphabet_items(
     return items
 
 
-def series_splitter(text: str, delimiter: str = ',') -> List[str]:
+def series_splitter(text: str, delimiter: str = ",") -> List[str]:
     """Splits a string list with or without an Oxford comma (delimiter).
 
     :param text:    Comma separated list
@@ -81,7 +78,12 @@ def series_splitter(text: str, delimiter: str = ',') -> List[str]:
     """
     items = [item.strip() for item in text.split(f"{delimiter} ")]
 
-    for conjunction in ('and', 'nor', 'but', 'or',):
+    for conjunction in (
+        "and",
+        "nor",
+        "but",
+        "or",
+    ):
         if items[-1].startswith(f"{conjunction} "):
             # Oxford comma case
             items[-1] = items[-1].removeprefix(f"{conjunction} ")

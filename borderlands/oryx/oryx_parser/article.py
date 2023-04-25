@@ -9,13 +9,11 @@ import re
 import traceback
 from typing import TYPE_CHECKING, Any, Generator
 
-from .equipment_category import EquipmentCategoryParser
 from .base import ParserBase
-
+from .equipment_category import EquipmentCategoryParser
 
 if TYPE_CHECKING:
     import bs4
-
 
 
 RUSSIA_DATA_SECTION_INDEX = 7
@@ -24,28 +22,34 @@ UKRAINE_DATA_SECTION_INDEX = 1
 
 class ArticleParser(ParserBase):
     """Parses Oryx equipment loss articles."""
+
     # Initialize
     _data_section_index: int
 
-    def __init__(self, tag: bs4.Tag, _data_section_index: int, logger: logging.Logger | None = None) -> None:
+    def __init__(
+        self,
+        tag: bs4.Tag,
+        _data_section_index: int,
+        logger: logging.Logger | None = None,
+    ) -> None:
         super().__init__(tag, logger)
         self._data_section_index: int = _data_section_index
 
     @property
     def article_sections(self) -> bs4.ResultSet:
         """Sections of the article.
-        
+
         Returns
         -------
         bs4.ResultSet
             A `bs4.ResultSet` object containing the article's sections
         """
-        return self.tag.find_all('div', recursive=False)
+        return self.tag.find_all("div", recursive=False)
 
     @property
     def data_section(self) -> bs4.Tag:
         """Section of the article containing core data.
-        
+
         Returns
         -------
         bs4.Tag
@@ -56,7 +60,7 @@ class ArticleParser(ParserBase):
     @property
     def equipment_category_sections(self) -> list[bs4.Tag]:
         """Sections of the article containing equipment categories.
-        
+
         Returns
         -------
         list[bs4.Tag]
@@ -64,10 +68,9 @@ class ArticleParser(ParserBase):
         """
         categories: list[bs4.Tag] = []
         category_header_regex: re.Pattern = re.compile(
-            r"^.+\(\d+, .+\)\s*$",
-            flags=re.DOTALL
+            r"^.+\(\d+, .+\)\s*$", flags=re.DOTALL
         )
-        for tag in self.data_section.find_all('h3'):
+        for tag in self.data_section.find_all("h3"):
             if category_header_regex.match(tag.text) is not None:
                 categories.append(tag)
         return categories

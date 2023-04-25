@@ -27,17 +27,16 @@ class EquipmentCategoryParser(ParserBase):
         """The label for the equipment category."""
         h3 = self.tag.text.strip()
         match = self.label_pattern.match(h3)
-        return match.group('asset_category')\
-            .strip()
+        return match.group("asset_category").strip()
 
     def parse(self) -> Generator[dict, None, None]:
         label = self.label
-        ul_tag: bs4.Tag = self.tag.find_next('ul')
-        for tag in ul_tag.find_all('li', recursive=False):
+        ul_tag: bs4.Tag = self.tag.find_next("ul")
+        for tag in ul_tag.find_all("li", recursive=False):
             try:
                 for case in EquipmentModelParser(tag, logger=self.logger).parse():
                     # Set asset category attributes
-                    case['category'] = label
+                    case["category"] = label
                     yield case
             except Exception:
                 self.logger.error(traceback.format_exc())

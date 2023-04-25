@@ -9,16 +9,13 @@ from io import BufferedIOBase, TextIOBase
 from pathlib import Path
 from typing import IO, Any
 
-from prefect import task, get_run_logger
+from prefect import get_run_logger, task
 from prefect_aws import S3Bucket
 
 
 @task
 def upload(
-    content: bytes | IO | Path | str | Any,
-    key: str,
-    bucket: S3Bucket,
-    **kwds
+    content: bytes | IO | Path | str | Any, key: str, bucket: S3Bucket, **kwds
 ) -> str:
     """Uploads the `content` under `key` to the given `bucket.`
 

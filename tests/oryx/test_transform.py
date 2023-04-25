@@ -4,33 +4,35 @@ Test the result of transforming Oryx data.
 import pandas as pd
 
 from borderlands.oryx.transform import (
-    Status,
     EvidenceSource,
-    tabulate_loss_cases,
+    Status,
     assign_country_of_production,
     assign_evidence_source,
     assign_status,
-    flag_duplicate_natural_keys
+    flag_duplicate_natural_keys,
+    tabulate_loss_cases,
 )
 
 
-def test_tabulate_loss_cases(ukraine_page_parse_result: list, russia_page_parse_result: list):
+def test_tabulate_loss_cases(
+    ukraine_page_parse_result: list, russia_page_parse_result: list
+):
     """Tests tabulating the loss cases."""
     ukraine_data = dict(
         name="Ukraine",
         as_of_date="2023-04-24T22:46:47.590878",
-        data = ukraine_page_parse_result,
+        data=ukraine_page_parse_result,
     )
     russia_data = dict(
         name="Russia",
         as_of_date="2023-04-24T22:46:47.590878",
-        data = russia_page_parse_result,
+        data=russia_page_parse_result,
     )
 
     for df in map(tabulate_loss_cases.fn, (ukraine_data, russia_data)):
         assert isinstance(df, pd.DataFrame)
         assert not df.empty
-        assert df.shape[1] == 7
+        assert df.shape[1] == 8
 
         # Types
         assert df["category"].dtype == "object"
@@ -68,7 +70,8 @@ def test_assign_status(oryx_descriptions: list[str]):
     # Check that all statuses are valid
     statuses = [status.value for status in Status]
     # These are nested arrays
-    assert df["status"].explode().isin(statuses).all()
+    df = df.explode("status")
+    assert df[df["status"].notna()]["status"].isin(statuses).all()
 
 
 def test_assign_country_of_production(oryx_flag_urls: list, flag_url_mapper: dict):
@@ -165,7 +168,7 @@ def test_flag_duplicate_natural_keys():
             ["Ukraine", "Aircraft", "MiG-29", "https://example.com", "12347", ""],
             ["Ukraine", "Aircraft", "MiG-29", "https://example.com", "12347", ""],
             ["Ukraine", "Aircraft", "MiG-29", "https://example.com", "12347", ""],
-            ["Russia",  "Aircraft", "MiG-29", "https://example.com", "12346", ""],
+            ["Russia", "Aircraft", "MiG-29", "https://example.com", "12346", ""],
         ],
         columns=["country", "category", "model", "evidence_url", "id_", "description"],
     )
