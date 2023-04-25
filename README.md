@@ -1,3 +1,5 @@
+[![](./assets/borderlands%20soldier%20header.png)](https://www.midjourney.com/app/jobs/c2dff0de-6977-4260-9368-95ec2b0752e6/)
+
 # Borderlands
 
 ETL for Russo-Ukrainian war data.
