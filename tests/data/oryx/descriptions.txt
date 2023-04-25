@@ -1,0 +1,23 @@
+1, destroyed
+1, captured
+5 and 6, destroyed
+53, 54, 55, 56 and 57, captured and later destroyed
+1, damaged
+1, abandoned
+4, damaged and abandoned
+1, damaged and captured
+1, 2, 3 and 4, captured
+20, captured and later destroyed
+21 and 22, captured and later destroyed
+15, destroyed on the ground
+14, damaged beyond economical repair
+1, scuttled to prevent capture by Russia
+1, Lubny 'P178', sunk but later raised by Russia
+1, sunk
+1, BG-32 'Donbass' sunk
+2, unknown ID, captured
+1, 'DSHK-1 Stanislav', sunk
+4, 'BG 309', captured
+1, with 82mm 2B9 Vasilek mortar, destroyed
+26, with 23mm ZU-23, destroyed
+31, with ZU-23 AA gun, destroyed

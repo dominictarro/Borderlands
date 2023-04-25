@@ -1,0 +1,176 @@
+{
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Flag_of_the_Soviet_Union.svg/23px-Flag_of_the_Soviet_Union.svg.png": {
+        "Alpha-2": "SU",
+        "Alpha-3": "SUN",
+        "Official Name": "Union of Soviet Socialist Republics",
+        "Common Name": "USSR"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/23px-Flag_of_Russia.svg.png": {
+        "Alpha-2": "RU",
+        "Alpha-3": "RUS",
+        "Official Name": "Russian Federation",
+        "Common Name": "Russia"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/0/03/Flag_of_Italy.svg/23px-Flag_of_Italy.svg.png": {
+        "Alpha-2": "IT",
+        "Alpha-3": "ITA",
+        "Official Name": "Republic of Italy",
+        "Common Name": "Italy"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Flag_of_the_Czech_Republic.svg/23px-Flag_of_the_Czech_Republic.svg.png": {
+        "Alpha-2": "CZ",
+        "Alpha-3": "CZE",
+        "Official Name": "Czech Republic",
+        "Common Name": "Czech Republic"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Flag_of_Iran.svg/23px-Flag_of_Iran.svg.png": {
+        "Alpha-2": "IR",
+        "Alpha-3": "IRN",
+        "Official Name": "Islamic Republic of Iran",
+        "Common Name": "Iran"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Flag_of_Israel.svg/21px-Flag_of_Israel.svg.png": {
+        "Alpha-2": "IL",
+        "Alpha-3": "ISR",
+        "Official Name": "State of Israel",
+        "Common Name": "Israel"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/1/12/Flag_of_Poland.svg/23px-Flag_of_Poland.svg.png": {
+        "Alpha-2": "PL",
+        "Alpha-3": "POL",
+        "Official Name": "Republic of Poland",
+        "Common Name": "Poland"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Flag_of_Ukraine.svg/23px-Flag_of_Ukraine.svg.png": {
+        "Alpha-2": "UA",
+        "Alpha-3": "UKR",
+        "Official Name": "Ukraine",
+        "Common Name": "Ukraine"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/4/4c/Flag_of_Sweden.svg/23px-Flag_of_Sweden.svg.png": {
+        "Alpha-2": "SE",
+        "Alpha-3": "SWE",
+        "Official Name": "Kingdom of Sweden",
+        "Common Name": "Sweden"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Flag_of_Slovenia.svg/23px-Flag_of_Slovenia.svg.png": {
+        "Alpha-2": "SI",
+        "Alpha-3": "SVN",
+        "Official Name": "Republic of Slovenia",
+        "Common Name": "Slovenia"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Flag_of_the_Netherlands.svg/23px-Flag_of_the_Netherlands.svg.png": {
+        "Alpha-2": "NL",
+        "Alpha-3": "NLD",
+        "Official Name": "Kingdom of the Netherlands",
+        "Common Name": "Netherlands"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/a/a4/Flag_of_the_United_States.svg/23px-Flag_of_the_United_States.svg.png": {
+        "Alpha-2": "US",
+        "Alpha-3": "USA",
+        "Official Name": "United States of America",
+        "Common Name": "United States"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/c/c3/Flag_of_France.svg/23px-Flag_of_France.svg.png": {
+        "Alpha-2": "FR",
+        "Alpha-3": "FRA",
+        "Official Name": "French Republic",
+        "Common Name": "France"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Flag_of_Finland.svg/23px-Flag_of_Finland.svg.png": {
+        "Alpha-2": "FI",
+        "Alpha-3": "FIN",
+        "Official Name": "Republic of Finland",
+        "Common Name": "Finland"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/a/ae/Flag_of_the_United_Kingdom.svg/23px-Flag_of_the_United_Kingdom.svg.png": {
+        "Alpha-2": "GB",
+        "Alpha-3": "GBR",
+        "Official Name": "United Kingdom of Great Britain and Northern Ireland",
+        "Common Name": "United Kingdom"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Flag_of_Australia_%28converted%29.svg/23px-Flag_of_Australia_%28converted%29.svg.png": {
+        "Alpha-2": "AU",
+        "Alpha-3": "AUS",
+        "Official Name": "Commonwealth of Australia",
+        "Common Name": "Australia"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/23px-Flag_of_Turkey.svg.png": {
+        "Alpha-2": "TR",
+        "Alpha-3": "TUR",
+        "Official Name": "Republic of Turkey",
+        "Common Name": "Turkey"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Flag_of_the_United_Arab_Emirates.svg/23px-Flag_of_the_United_Arab_Emirates.svg.png": {
+        "Alpha-2": "AE",
+        "Alpha-3": "ARE",
+        "Official Name": "United Arab Emirates",
+        "Common Name": "United Arab Emirates"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Canada_%28Pantone%29.svg/23px-Flag_of_Canada_%28Pantone%29.svg.png": {
+        "Alpha-2": "CA",
+        "Alpha-3": "CAN",
+        "Official Name": "Dominion of Canada",
+        "Common Name": "Canada"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Flag_of_Estonia.svg/23px-Flag_of_Estonia.svg.png": {
+        "Alpha-2": "EE",
+        "Alpha-3": "EST",
+        "Official Name": "Republic of Estonia",
+        "Common Name": "Estonia"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Norway.svg/21px-Flag_of_Norway.svg.png": {
+        "Alpha-2": "NO",
+        "Alpha-3": "NOR",
+        "Official Name": "Kingdom of Norway",
+        "Common Name": "Norway"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Flag_of_Slovakia.svg/23px-Flag_of_Slovakia.svg.png": {
+        "Alpha-2": "VK",
+        "Alpha-3": "SVK",
+        "Official Name": "Slovak Republic",
+        "Common Name": "Slovakia"
+    },
+    "https://upload.wikimedia.org/wikipedia/en/thumb/b/ba/Flag_of_Germany.svg/23px-Flag_of_Germany.svg.png": {
+        "Alpha-2": "DE",
+        "Alpha-3": "DEU",
+        "Official Name": "Federal Republic of Germany",
+        "Common Name": "Germany"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Flag_of_Lithuania.svg/23px-Flag_of_Lithuania.svg.png": {
+        "Alpha-2": "LT",
+        "Alpha-3": "LTU",
+        "Official Name": "Republic of Lithuania",
+        "Common Name": "Lithuania"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Flag_of_Latvia.svg/23px-Flag_of_Latvia.svg.png": {
+        "Alpha-2": "LV",
+        "Alpha-3": "LVA",
+        "Official Name": "Republic of Latvia",
+        "Common Name": "Latvia"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Flag_of_Belarus.svg/23px-Flag_of_Belarus.svg.png": {
+        "Alpha-2": "BY",
+        "Alpha-3": "BLR",
+        "Official Name": "Republic of Belarus",
+        "Common Name": "Belarus"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/61/Flag_of_Yugoslavia_%281946-1992%29.svg/23px-Flag_of_Yugoslavia_%281946-1992%29.svg.png": {
+        "Alpha-2": "YU",
+        "Alpha-3": "YUG",
+        "Official Name": "Socialist Federal Republic of Yugoslavia",
+        "Common Name": "Yugoslavia"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Flag_of_Denmark.svg/20px-Flag_of_Denmark.svg.png": {
+        "Alpha-2": "DK",
+        "Alpha-3": "DNK",
+        "Official Name": "Kingdom of Denmark",
+        "Common Name": "Denmark"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Flag_of_Cyprus.svg/23px-Flag_of_Cyprus.svg.png": {
+        "Alpha-2": "CY",
+        "Alpha-3": "CYP",
+        "Official Name": "Republic of Cyprus",
+        "Common Name": "Cyprus"
+    }
+}
