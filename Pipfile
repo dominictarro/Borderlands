@@ -1,0 +1,27 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+requests = "*"
+beautifulsoup4 = "*"
+prefect = "*"
+prefect-aws = "*"
+lxml = "*"
+marshmallow = "*"
+pytest = "*"
+pandas = "*"
+
+[dev-packages]
+pipenv = "*"
+pre-commit = "*"
+flake8 = "*"
+black = "*"
+isort = {extras = ["pyproject"], version = "*"}
+commitizen = "*"
+prefect-github = "*"
+pygit2 = "*"
+
+[requires]
+python_version = "3.11"
