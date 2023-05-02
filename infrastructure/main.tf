@@ -106,6 +106,7 @@ resource "aws_iam_role" "prefect_agent_task_role" {
             "ecr:GetDownloadUrlForLayer",
             "ecs:DeregisterTaskDefinition",
             "ecs:DescribeTasks",
+            "ecs:DescribeTaskDefinition",
             "ecs:RegisterTaskDefinition",
             "ecs:RunTask",
             "iam:PassRole",
