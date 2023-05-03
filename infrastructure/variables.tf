@@ -12,7 +12,7 @@ variable "agent_desired_count" {
 
 variable "agent_extra_pip_packages" {
   description = "Packages to install on the agent assuming image is based on prefecthq/prefect"
-  default     = "prefect-aws s3fs prefect-github"
+  default     = "prefect-aws prefect-github"
   type        = string
 }
 

@@ -6,7 +6,9 @@ terraform-apply: terraform-plan
 	terraform -chdir=infrastructure apply "terraform.tfplan"
 terraform-destroy: infrastructure/ infrastructure/main.tf infrastructure/variables.tf infrastructure/terraform.tfvars
 	terraform -chdir=infrastructure destroy -var-file=terraform.tfvars
+terraform-docs: infrastructure/ infrastructure/main.tf
+	terraform-docs markdown infrastructure/ --header-from main.tf --output-file README.md --indent 2
 
-# Automate the deployment of the pipeline
+# Run the tests
 tests: tests/ tests/**/test_*.py
 	pytest -v tests/

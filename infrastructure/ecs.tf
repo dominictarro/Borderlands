@@ -70,7 +70,7 @@ resource "aws_ecs_service" "prefect_agent_service" {
   network_configuration {
     security_groups  = [aws_security_group.prefect_agent.id]
     assign_public_ip = true
-    subnets          = aws_subnet.borderlands_subnet.*.id
+    subnets          = [aws_subnet.borderlands_public_subnet.id]
   }
   task_definition = aws_ecs_task_definition.prefect_agent_task_definition.arn
 }
