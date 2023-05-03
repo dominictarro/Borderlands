@@ -2,6 +2,15 @@
 
 Terraform configuration for building Borderlands's execution infrastructure.
 
+- [Borderlands Infrastructure](#borderlands-infrastructure)
+  - [Requirements](#requirements)
+  - [Providers](#providers)
+  - [Modules](#modules)
+  - [Resources](#resources)
+  - [Inputs](#inputs)
+  - [Outputs](#outputs)
+  - [Guides](#guides)
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -75,3 +84,7 @@ No modules.
 | <a name="output_prefect_agent_service_id"></a> [prefect\_agent\_service\_id](#output\_prefect\_agent\_service\_id) | ID of the Agent's ECS Service running within the cluster |
 | <a name="output_prefect_agent_task_role_arn"></a> [prefect\_agent\_task\_role\_arn](#output\_prefect\_agent\_task\_role\_arn) | ARN of the Agent's ECS Task Role. Use for Prefect ECS blocks. |
 <!-- END_TF_DOCS -->
+
+## Guides
+
+- [Terraforming AWS Networks](https://medium.com/appgambit/terraform-aws-vpc-with-private-public-subnets-with-nat-4094ad2ab331)
