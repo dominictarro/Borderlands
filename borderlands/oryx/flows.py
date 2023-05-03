@@ -6,9 +6,9 @@ from __future__ import annotations
 from prefect import flow
 from prefect.context import FlowRunContext, get_run_context
 
-from .assets import get_country_of_production_url_mapper
-from .extract import get_russian_equipment_loss_page, get_ukrainian_equipment_loss_page
-from .stage import oryx_equipment_losses_for_country
+from borderlands.oryx.assets import get_country_of_production_url_mapper
+from borderlands.oryx.extract import get_russian_equipment_loss_page, get_ukrainian_equipment_loss_page
+from borderlands.oryx.stage import oryx_equipment_losses_for_country
 
 
 @flow(
