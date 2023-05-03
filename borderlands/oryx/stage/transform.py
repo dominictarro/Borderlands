@@ -13,10 +13,10 @@ import pandas as pd
 from prefect import task
 from prefect.serializers import CompressedJSONSerializer
 
-from ..utilities.blocks import task_persistence_subfolder
-from ..utilities.loggers import get_prefect_or_default_logger
-from . import blocks
-from .oryx_parser import article
+from ...utilities.blocks import task_persistence_subfolder
+from ...utilities.loggers import get_prefect_or_default_logger
+from .. import blocks
+from ..oryx_parser import article
 
 
 class Status(enum.Enum):

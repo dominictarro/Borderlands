@@ -15,6 +15,7 @@ from borderlands.oryx.oryx_parser.article import (
     UKRAINE_DATA_SECTION_INDEX,
     ArticleParser,
 )
+from borderlands.oryx.stage import extract, transform
 from borderlands.utilities.blocks import create_child_bucket, task_persistence_subfolder
 
 
@@ -104,11 +105,11 @@ def mock_oryx_bucket(bucket_dummy_path: Path, monkeypatch: MonkeyPatch):
     monkeypatch.setattr(blocks, "assets_bucket", assets_bucket)
     monkeypatch.setattr(blocks, "persistence_bucket", persistence_bucket)
 
-    from borderlands.oryx import extract, stage, transform
+    from borderlands.oryx import stage
 
     # Update tasks using the persistence bucket as result_storage
 
-    for module in (extract, stage, transform):
+    for module in (extract, transform):
         for attr, value in module.__dict__.items():
             if isinstance(value, Task) and value.persist_result:
                 value = task_persistence_subfolder(persistence_bucket)(value)
