@@ -1,0 +1,12 @@
+assets/
+blocks/
+infrastructure/
+tests/
+.flake8
+.git*
+LICENSE
+Makefile
+manage.py
+Pipfile*
+pyproject.toml
+*.md
