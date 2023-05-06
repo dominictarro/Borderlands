@@ -25,6 +25,7 @@ from borderlands.oryx.stage.transform import (
 from borderlands.utilities.io_ import upload
 from borderlands.utilities.misc import build_datetime_key
 from borderlands.utilities.tasks import concat
+from flows import oryx_media
 
 
 @flow(
@@ -38,6 +39,7 @@ from borderlands.utilities.tasks import concat
     # seconds
     timeout_seconds=600,
     log_prints=True,
+    on_completion=[oryx_media.trigger_extract_oryx_media],
 )
 def stage_oryx_equipment_losses() -> list[dict]:
     """Flow to retrieve the web pages of Russian and Ukrainian equipment

@@ -12,3 +12,4 @@ assets_bucket = create_child_bucket("assets", "-assets", parent=oryx_bucket, sav
 persistence_bucket = create_child_bucket(
     "persistence", "-persistence", parent=oryx_bucket, save=True
 )
+media_bucket = create_child_bucket("media", "-media", parent=oryx_bucket, save=True)
