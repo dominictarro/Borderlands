@@ -4,9 +4,11 @@ Flow for retrieving media referenced in Oryx confirmed losses.
 import pandas as pd
 from prefect import Flow, flow, task
 from prefect.artifacts import create_markdown_artifact
+from prefect.cli.deployment import get_deployment
+from prefect.client.orchestration import get_client
 from prefect.engine import FlowRun
-from prefect.server import api, schemas
-from prefect.states import State
+from prefect.server.schemas.responses import DeploymentResponse
+from prefect.states import Scheduled, State
 
 from borderlands.oryx import blocks
 from borderlands.oryx.media_stage.extract import postimg
@@ -126,19 +128,29 @@ def extract_oryx_media(key: str | None = None):
     )
 
 
-def trigger_extract_oryx_media(flow: Flow, flow_run: FlowRun, state: State):
+async def trigger_extract_oryx_media(flow: Flow, flow_run: FlowRun, state: State):
     """Triggers the media extraction flow. Expects `state` result to be the URL."""
     logger = get_prefect_or_default_logger()
-    url = state.result()
-    from deployments.oryx import oryx_media_deployment
 
-    oryx_media_deployment.update(params={"key": url})
-    dpfc: schemas.actions.DeploymentFlowRunCreate = (
-        schemas.actions.DeploymentFlowRunCreate.from_orm(oryx_media_deployment)
-    )
-    frr: schemas.responses.FlowRunResponse = (
-        api.deployments.create_flow_run_from_deployment(dpfc)
-    )
-    logger.info(
-        f"Created flow run '{frr.name}' for deployment '{oryx_media_deployment.name}'."
-    )
+    url = await state.result(fetch=True)
+    try:
+        async with get_client() as client:
+            deployment: DeploymentResponse = await get_deployment(
+                client, name="Oryx Media Extraction Flow/Triggered", deployment_id=None
+            )
+
+            hooked_flow_run = await client.create_flow_run_from_deployment(
+                deployment.id,
+                parameters={"key": url},
+                state=Scheduled(),
+                tags=["oryx", "hook", flow_run.name],
+            )
+
+            logger.info(
+                f"Created flow run '{hooked_flow_run.name}' for deployment '{deployment.name}'."
+            )
+    except Exception:
+        logger.warning(
+            f"Errored while triggering deployment for {extract_oryx_media.name}.",
+            exc_info=1,
+        )
