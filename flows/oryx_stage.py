@@ -23,6 +23,7 @@ from borderlands.oryx.stage.transform import (
     tabulate_loss_cases,
 )
 from borderlands.utilities.io_ import upload
+from borderlands.utilities.misc import build_datetime_key
 from borderlands.utilities.tasks import concat
 
 
@@ -65,7 +66,13 @@ def stage_oryx_equipment_losses() -> list[dict]:
     df = calculate_url_hash(df)
 
     records = convert_to_records(df)
-    datestring = ctx.flow_run.start_time.isoformat().replace(":", "-").replace(" ", "_")
-    upload(records, f"{datestring}.json", blocks.landing_bucket)
-
-    return records
+    
+    dt = ctx.flow_run.start_time
+    # Upload the records to the landing bucket.
+    # Landing bucket structured like: year=YYYY/month=MM/day=DD/oryx_YYYYMMDDHH.json
+    result_key: str = upload(
+        records,
+        f"{build_datetime_key(dt)}/oryx_{dt.year * 10000 + dt.month * 100 + dt.day}.json",
+        blocks.landing_bucket
+    )
+    return result_key
