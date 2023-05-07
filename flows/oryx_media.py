@@ -130,27 +130,16 @@ def extract_oryx_media(key: str | None = None):
 
 async def trigger_extract_oryx_media(flow: Flow, flow_run: FlowRun, state: State):
     """Triggers the media extraction flow. Expects `state` result to be the URL."""
-    logger = get_prefect_or_default_logger()
-
     url = await state.result(fetch=True)
-    try:
-        async with get_client() as client:
-            deployment: DeploymentResponse = await get_deployment(
-                client, name="Oryx Media Extraction Flow/Triggered", deployment_id=None
-            )
+    async with get_client() as client:
 
-            hooked_flow_run = await client.create_flow_run_from_deployment(
-                deployment.id,
-                parameters={"key": url},
-                state=Scheduled(),
-                tags=["oryx", "hook", flow_run.name],
-            )
+        deployment: DeploymentResponse = await get_deployment(
+            client, name="Oryx Media Extraction Flow/Trigger", deployment_id=None
+        )
 
-            logger.info(
-                f"Created flow run '{hooked_flow_run.name}' for deployment '{deployment.name}'."
-            )
-    except Exception:
-        logger.warning(
-            f"Errored while triggering deployment for {extract_oryx_media.name}.",
-            exc_info=1,
+        await client.create_flow_run_from_deployment(
+            deployment.id,
+            parameters={"key": url},
+            state=Scheduled(),
+            tags=["oryx", "hook", flow_run.name],
         )
