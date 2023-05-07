@@ -3,6 +3,7 @@ Utility classes and methods.
 """
 from __future__ import annotations
 
+import datetime
 import string
 from typing import Callable, List
 
@@ -96,3 +97,47 @@ def series_splitter(text: str, delimiter: str = ",") -> List[str]:
         # conjunction found, go no further
         break
     return items
+
+
+def build_datetime_key(dt: datetime.datetime, unit: str = "hour") -> str:
+    """Builds a datetime key in the format `year=YYYY/month=MM/day=DD/hour=HH/`.
+    Can limit the `unit` to
+
+    - `year`
+    - `month`
+    - `day`
+    - `hour`
+    - `minute`
+    - `second`
+
+    :param dt:  Datetime to build key for
+    :return:    Datetime key
+
+    >>> build_datetime_key(datetime.datetime(2021, 1, 1, 0, 0))
+    >>> 'year=2021/month=01/day=01/hour=00'
+
+    >>> build_datetime_key(datetime.datetime(2021, 1, 1, 0, 0), granularity="day")
+    >>> 'year=2021/month=01/day=01'
+    """
+    # position, format
+    UNIT = {
+        "year": (1, "%04d"),
+        "month": (2, "%02d"),
+        "day": (3, "%02d"),
+        "hour": (4, "%02d"),
+        "minute": (5, "%02d"),
+        "second": (6, "%02d"),
+    }
+    if unit not in UNIT:
+        raise ValueError(f"Unit must be one of {tuple(UNIT.keys())!r}")
+
+    # Build key
+    key = ""
+    for u, (p, f) in sorted(UNIT.items(), key=lambda x: x[1][0]):
+        if p > UNIT[unit][0]:
+            break
+        key += f"{u}={f % getattr(dt, u)}"
+        
+        if p < UNIT[unit][0]:
+            key += "/"
+    return key

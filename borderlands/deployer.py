@@ -2,6 +2,7 @@
 Standardized deployment conventions for Borderlands.
 """
 import abc
+import re
 
 from prefect.blocks.abstract import Block
 from prefect.deployments import Deployment
@@ -37,12 +38,12 @@ class Deployer(abc.ABC):
         # Prefect has limited acceptable characters (alphanumerics and hyphens)
         # Replace non-acceptable characters with hyphens
         suffix = self.reference
-        suffix = suffix.replace("/", "-")
+        suffix = re.sub(r"[/\._-]", "-", suffix)
         # Remove leading and trailing hyphens
         suffix = suffix.strip("-")
         # Remove duplicate hyphens (a--b -> a-b)
         suffix = "-".join(filter(lambda x: x, suffix.split("-")))
-        return f"{prefix}-{block._block_document_name}-{self.reference}"
+        return f"{prefix}-{block._block_document_name}-{suffix}"
 
     def deep_copy_block(self, block: Block | str) -> Block:
         """Creates a new block document with a separate ID."""
@@ -52,9 +53,7 @@ class Deployer(abc.ABC):
         elif not isinstance(block, Block):
             raise TypeError(f"Expected a Block or str, got {type(block)}")
 
-        block = block.copy(
-            exclude={"_block_document_id"}
-        )
+        block = block.copy(exclude={"_block_document_id"})
         return block
 
     @abc.abstractmethod
@@ -83,7 +82,6 @@ class Deployer(abc.ABC):
 
 
 class StandardDeployer(Deployer):
-
     def update_ecs_task(self, block: ECSTask, production: bool) -> ECSTask:
         """Updates an infrastructure block with the reference."""
         if not isinstance(block, Block):
@@ -103,7 +101,9 @@ class StandardDeployer(Deployer):
         block._block_document_name = self.derive_block_name(block, production)
         return block
 
-    def update_github_repository(self, block: GitHubRepository, production: bool) -> GitHubRepository:
+    def update_github_repository(
+        self, block: GitHubRepository, production: bool
+    ) -> GitHubRepository:
         """Updates a storage block with the reference."""
         if not isinstance(block, Block):
             raise TypeError(f"Expected a Block, got {type(block)}")
@@ -115,10 +115,10 @@ class StandardDeployer(Deployer):
     def production(self) -> Deployment:
         """Returns a production deployment."""
         # Create a unique GitHubRepository block
-        github_repo: GitHubRepository = self.deep_copy_block("storage")
+        github_repo: GitHubRepository = self.deep_copy_block(self.base.storage)
         github_repo = self.update_github_repository(github_repo, True)
 
-        ecs_task: ECSTask = self.deep_copy_block("infrastructure")
+        ecs_task: ECSTask = self.deep_copy_block(self.base.infrastructure)
         ecs_task = self.update_ecs_task(ecs_task, True)
 
         self.base.update(
@@ -131,10 +131,10 @@ class StandardDeployer(Deployer):
     def development(self) -> Deployment:
         """Returns a development deployment."""
         # Create a unique GitHubRepository block
-        github_repo: GitHubRepository = self.deep_copy_block("storage")
+        github_repo: GitHubRepository = self.deep_copy_block(self.base.storage)
         github_repo = self.update_github_repository(github_repo, False)
 
-        ecs_task: ECSTask = self.deep_copy_block("infrastructure")
+        ecs_task: ECSTask = self.deep_copy_block(self.base.infrastructure)
         ecs_task = self.update_ecs_task(ecs_task, False)
         # Update log level
         ecs_task.env["PREFECT_LOGGING_LEVEL"] = "DEBUG"
@@ -142,7 +142,7 @@ class StandardDeployer(Deployer):
         self.base.update(
             storage=github_repo,
             infrastructure=ecs_task,
-            name=self.base.name + f" - Development {self.reference}"
+            name=self.base.name + f" - Development {self.reference}",
         )
         # Create a unique ECSTask block
         return self.base
