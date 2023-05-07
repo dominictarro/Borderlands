@@ -4,6 +4,7 @@ Transformations to apply to equipment loss data.
 from __future__ import annotations
 
 import enum
+import hashlib
 from datetime import datetime
 from typing import Any
 from urllib.parse import urlparse
@@ -13,10 +14,10 @@ import pandas as pd
 from prefect import task
 from prefect.serializers import CompressedJSONSerializer
 
-from ..utilities.blocks import task_persistence_subfolder
-from ..utilities.loggers import get_prefect_or_default_logger
-from . import blocks
-from .oryx_parser import article
+from ...utilities.blocks import task_persistence_subfolder
+from ...utilities.loggers import get_prefect_or_default_logger
+from .. import blocks
+from ..oryx_parser import article
 
 
 class Status(enum.Enum):
@@ -316,4 +317,25 @@ def flag_duplicate_natural_keys(df: pd.DataFrame) -> pd.DataFrame:
     gdf.loc[gdf["description"].str.len() > 1, "failed_duplicate_check"] = True
     gdf = gdf.drop(columns=["description"])
     df = df.merge(gdf, how="left", on=natural_key, suffixes=("", "_DROPME"))
+    return df
+
+
+@task(persist_result=False)
+def calculate_url_hash(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculates the SHA256 hash of the evidence URL.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        `DataFrame` to calculate hashes for
+
+    Returns
+    -------
+    pd.DataFrame
+        `DataFrame` with a url_hash column
+    """
+    url_bytes = df["evidence_url"].str.encode("utf-8")
+    df["url_hash"] = url_bytes.apply(
+        lambda url_bytes: hashlib.sha256(url_bytes).hexdigest()
+    )
     return df

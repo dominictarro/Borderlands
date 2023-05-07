@@ -3,7 +3,7 @@ Test the result of transforming Oryx data.
 """
 import pandas as pd
 
-from borderlands.oryx.transform import (
+from borderlands.oryx.stage.transform import (
     EvidenceSource,
     Status,
     assign_country_of_production,

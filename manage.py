@@ -15,7 +15,6 @@ from borderlands.deployer import Deployer, StandardDeployer
 @click.group()
 def cli():
     """Manage Prefect deployments."""
-    pass
 
 
 @cli.command(context_settings=dict(show_default=True))
@@ -38,14 +37,14 @@ def cli():
     "--deployer",
     type=str,
     help="Path or import route to a custom deployer.",
-    default = None,
+    default=None,
 )
 @click.option(
     "-o",
     "--output",
     type=str,
     help="Path to write the deployment to.",
-    default = None,
+    default=None,
 )
 @click.option(
     "-s",
@@ -59,7 +58,15 @@ def cli():
     is_flag=True,
     help="Apply the deployment to the Prefect server.",
 )
-def deploy(deployment: str, reference: str, production: bool, deployer: str, output: str, save: bool, apply: bool):
+def deploy(
+    deployment: str,
+    reference: str,
+    production: bool,
+    deployer: str,
+    output: str,
+    save: bool,
+    apply: bool,
+):
     """Deploy Prefect flows."""
     try:
         # Expect deployment to be in the form of "path/to/deployment.py::deployment_obj"
@@ -67,7 +74,9 @@ def deploy(deployment: str, reference: str, production: bool, deployer: str, out
         path_to_deployment, deployment_name = deployment.split("::")
         import_route = path_to_deployment.replace("/", ".").removesuffix(".py")
     except ValueError:
-        click.echo("Deployment must be in the form of path/to/deployment.py::deployment_obj or path.to.deployment::deployment_obj")
+        click.echo(
+            "Deployment must be in the form of path/to/deployment.py::deployment_obj or path.to.deployment::deployment_obj"
+        )
         exit(1)
 
     try:
@@ -77,7 +86,9 @@ def deploy(deployment: str, reference: str, production: bool, deployer: str, out
         click.echo(f"Could not find deployment module {import_route}")
         exit(1)
     except AttributeError:
-        click.echo(f"Could not find deployment {deployment_name} in module {import_route}")
+        click.echo(
+            f"Could not find deployment {deployment_name} in module {import_route}"
+        )
         exit(1)
 
     # Expect deployer to be in the form of "path/to/deployer.py::Deployer"
@@ -89,7 +100,9 @@ def deploy(deployment: str, reference: str, production: bool, deployer: str, out
             path_to_deployer, deployer_name = deployer.split("::")
             import_route = path_to_deployer.replace("/", ".").removesuffix(".py")
         except ValueError:
-            click.echo("Deployer must be in the form of path/to/deployer.py::Deployer or path.to.deployer::Deployer")
+            click.echo(
+                "Deployer must be in the form of path/to/deployer.py::Deployer or path.to.deployer::Deployer"
+            )
             exit(1)
 
         try:
@@ -110,16 +123,17 @@ def deploy(deployment: str, reference: str, production: bool, deployer: str, out
         deployment = deployer.development()
 
     if save:
+        print("Saving deployment blocks to Prefect server.")
+        print(f"    Infrastructure: {deployment.infrastructure._block_document_name}")
         deployment.infrastructure.save(
             deployment.infrastructure._block_document_name, overwrite=True
         )
-        deployment.storage.save(
-            deployment.storage._block_document_name, overwrite=True
-        )
-    
+        print(f"    Storage: {deployment.storage._block_document_name}")
+        deployment.storage.save(deployment.storage._block_document_name, overwrite=True)
+
     if output is not None:
         deployment.to_yaml(output)
-    
+
     if apply:
         deployment.apply()
 

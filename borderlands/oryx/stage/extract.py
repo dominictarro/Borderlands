@@ -5,8 +5,8 @@ import requests
 from prefect.serializers import CompressedJSONSerializer
 from prefect.tasks import exponential_backoff, task
 
-from ..utilities.blocks import task_persistence_subfolder
-from . import blocks
+from ...utilities.blocks import task_persistence_subfolder
+from .. import blocks
 
 
 @task_persistence_subfolder(blocks.persistence_bucket)

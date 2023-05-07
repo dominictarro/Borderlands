@@ -12,6 +12,7 @@ lxml = "*"
 marshmallow = "*"
 pytest = "*"
 pandas = "*"
+tabulate = "*"
 
 [dev-packages]
 pipenv = "*"
