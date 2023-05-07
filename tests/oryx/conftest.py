@@ -7,15 +7,10 @@ from pathlib import Path
 import bs4
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from prefect.filesystems import LocalFileSystem
+from prefect import filesystems
 from prefect.tasks import Task
 
-from borderlands.oryx.oryx_parser.article import (
-    RUSSIA_DATA_SECTION_INDEX,
-    UKRAINE_DATA_SECTION_INDEX,
-    ArticleParser,
-)
-from borderlands.oryx.stage import extract, transform
+from borderlands.oryx.oryx_parser.article import ArticleParser
 from borderlands.utilities.blocks import create_child_bucket, task_persistence_subfolder
 
 
@@ -75,45 +70,93 @@ def flag_url_mapper(test_data_path: Path) -> dict[str, str]:
         return {k: v["Alpha-3"] for k, v in data.items()}
 
 
-@pytest.fixture(autouse=False, scope="function")
-def mock_oryx_bucket(bucket_dummy_path: Path, monkeypatch: MonkeyPatch):
-    """Creates a bucket that outputs to the 'tests/' directory's 'output/'."""
-    from borderlands import storage
+@pytest.fixture
+def landed_file_path(test_data_path: Path) -> Path:
+    """Path to the landed file."""
+    return test_data_path / "oryx" / "landed.json"
 
-    bucket: LocalFileSystem = LocalFileSystem(
-        _block_document_name="test-bucket",
-        _is_anonymous=True,
-        basepath=str(bucket_dummy_path.absolute()),
-    )
-    bucket._block_document_id = bucket._save(
-        "test-bucket",
-        is_anonymous=True,
-        overwrite=True,
-    )
-    monkeypatch.setattr(storage, "bucket", bucket)
 
-    # Oryx
+@pytest.fixture
+def oryx_bucket(test_bucket: filesystems.LocalFileSystem, monkeypatch: MonkeyPatch):
     from borderlands.oryx import blocks
 
-    oryx_bucket = create_child_bucket("oryx", "-oryx", bucket, save=True)
-    landing_bucket = create_child_bucket("landing", "-landing", oryx_bucket)
-    assets_bucket = create_child_bucket("assets", "-assets", oryx_bucket)
-    persistence_bucket = create_child_bucket("persistence", "-persistence", oryx_bucket)
-
+    oryx_bucket = create_child_bucket("oryx", "-oryx", test_bucket, save=True)
     monkeypatch.setattr(blocks, "oryx_bucket", oryx_bucket)
+    yield oryx_bucket
+
+
+@pytest.fixture
+def oryx_landing_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
+    landing_bucket = create_child_bucket("landing", "-landing", oryx_bucket)
+    from borderlands.oryx import blocks
+
     monkeypatch.setattr(blocks, "landing_bucket", landing_bucket)
+    yield landing_bucket
+
+
+@pytest.fixture
+def oryx_media_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
+    media_bucket = create_child_bucket("media", "-media", oryx_bucket)
+    from borderlands.oryx import blocks
+
+    monkeypatch.setattr(blocks, "media_bucket", media_bucket)
+    yield media_bucket
+
+
+@pytest.fixture
+def oryx_assets_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
+    assets_bucket = create_child_bucket("assets", "-assets", oryx_bucket)
+    from borderlands.oryx import blocks
+
     monkeypatch.setattr(blocks, "assets_bucket", assets_bucket)
+    yield assets_bucket
+
+
+@pytest.fixture
+def oryx_persistence_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
+    persistence_bucket = create_child_bucket("persistence", "-persistence", oryx_bucket)
+    from borderlands.oryx import blocks
+
     monkeypatch.setattr(blocks, "persistence_bucket", persistence_bucket)
+    yield persistence_bucket
 
-    from borderlands.oryx import stage
 
-    # Update tasks using the persistence bucket as result_storage
+@pytest.fixture(autouse=False, scope="function")
+def mock_oryx_persistence_bucket_functions(
+    oryx_persistence_bucket: Path, monkeypatch: MonkeyPatch
+):
+    """Creates a bucket that outputs to the 'tests/' directory's 'output/'."""
+    from borderlands.oryx.media_stage.extract import core as media_core
+    from borderlands.oryx.media_stage.extract import postimg as media_postimg
+    from borderlands.oryx.stage import extract, transform
 
-    for module in (extract, transform):
+    for module in (extract, transform, media_core, media_postimg):
         for attr, value in module.__dict__.items():
             if isinstance(value, Task) and value.persist_result:
-                value = task_persistence_subfolder(persistence_bucket)(value)
+                value = task_persistence_subfolder(oryx_persistence_bucket)(value)
                 monkeypatch.setattr(module, attr, value)
+
+
+@pytest.fixture(autouse=False, scope="function")
+def mock_blocks_import(
+    test_bucket,
+    oryx_bucket,
+    oryx_landing_bucket,
+    oryx_media_bucket,
+    oryx_assets_bucket,
+    oryx_persistence_bucket,
+    monkeypatch,
+):
+    """Mocks the import of the blocks module."""
+    import borderlands.oryx.blocks as blocks
+
+    monkeypatch.setattr(blocks, "bucket", test_bucket)
+    monkeypatch.setattr(blocks, "oryx_bucket", oryx_bucket)
+    monkeypatch.setattr(blocks, "landing_bucket", oryx_landing_bucket)
+    monkeypatch.setattr(blocks, "media_bucket", oryx_media_bucket)
+    monkeypatch.setattr(blocks, "assets_bucket", oryx_assets_bucket)
+    monkeypatch.setattr(blocks, "persistence_bucket", oryx_persistence_bucket)
+    yield blocks
 
 
 # NOTE DO NOT AUTOUSE
@@ -173,30 +216,34 @@ def mock_asset_request(test_data_path: Path, monkeypatch):
 
 
 @pytest.fixture
-def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> ArticleParser:
+def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> "ArticleParser":
     """An `ArticleParser` object."""
     body = oryx_ukraine_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
+    from borderlands.oryx.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
+
     yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
 
 
 @pytest.fixture
-def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> ArticleParser:
+def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> "ArticleParser":
     """An `ArticleParser` object."""
     body = oryx_russia_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
+    from borderlands.oryx.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
+
     yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
 
 
 @pytest.fixture
-def ukraine_page_parse_result(ukraine_article_parser: ArticleParser) -> list:
+def ukraine_page_parse_result(ukraine_article_parser: "ArticleParser") -> list:
     """The result of parsing the Ukraine page."""
     yield list(ukraine_article_parser.parse())
 
 
 @pytest.fixture
-def russia_page_parse_result(russia_article_parser: ArticleParser) -> list:
+def russia_page_parse_result(russia_article_parser: "ArticleParser") -> list:
     """The result of parsing the Russia page."""
     yield list(russia_article_parser.parse())
