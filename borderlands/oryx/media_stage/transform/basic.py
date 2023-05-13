@@ -17,7 +17,8 @@ Source data from the Oryx equipment losses page is structured like
     'country_of_production': 'SUN',
     'domain': 'twitter.com',
     'evidence_source': 'twitter',
-    'failed_duplicate_check': False
+    'failed_duplicate_check': False,
+    'url_hash': 'd41d8cd98f00b204e9800998ecf8427e'
 }
 ```
 
@@ -31,9 +32,9 @@ from prefect import task
 @task
 def convert_to_dataframe(pages: list[list]) -> pd.DataFrame:
     """Converts a list of lists into a single DataFrame.
-    
+
     Each document in the list of lists is a dictionary like
-    
+
     """
     data = []
     for page in pages:
@@ -49,7 +50,9 @@ def build_download_dataframe(df: pd.DataFrame, media_files: list[str]) -> pd.Dat
     Output columns: evidence_source, evidence_url, url_hash, key
     """
     # Create keys to associate with the media files
-    dl_df = df.groupby(["evidence_url", "evidence_source", "url_hash"], as_index=False).count()
+    dl_df = df.groupby(
+        ["evidence_url", "evidence_source", "url_hash"], as_index=False
+    ).count()
     dl_df["assoc_key"] = dl_df["evidence_source"] + "_" + dl_df["url_hash"]
     # Calculate the key for the media files
     # This is the same as the assoc_key, but evidence sources are folders
@@ -91,7 +94,9 @@ def update_with_results(df: pd.DataFrame, results: list[str]) -> pd.DataFrame:
 
 
 @task(persist_result=False)
-def build_media_state(df: pd.DataFrame, dl_dfs: tuple[pd.DataFrame], include: tuple[str]) -> pd.DataFrame:
+def build_media_state(
+    df: pd.DataFrame, dl_dfs: tuple[pd.DataFrame], include: tuple[str]
+) -> pd.DataFrame:
     """Builds a lookup table for media files based on the download dataframes
     with updated results.
     """
@@ -101,7 +106,7 @@ def build_media_state(df: pd.DataFrame, dl_dfs: tuple[pd.DataFrame], include: tu
         on="evidence_url",
         how="left",
         validate="many_to_one",
-        suffixes=("", "_dl")
+        suffixes=("", "_dl"),
     )
 
     # df does not have a is_downloaded column
@@ -118,7 +123,9 @@ def build_media_state(df: pd.DataFrame, dl_dfs: tuple[pd.DataFrame], include: tu
     #
     # Some evidence sources are not included in the download df. Only allow the
     # ones that are included to use the above logic.
-    df["is_downloaded"] = (df["key"].isnull() | df["is_downloaded"]) & df["evidence_source"].isin(include)
+    df["is_downloaded"] = (df["key"].isnull() | df["is_downloaded"]) & df[
+        "evidence_source"
+    ].isin(include)
 
     # This is the state of the downloads
     df = df[["evidence_source", "url_hash", "is_downloaded"]]
