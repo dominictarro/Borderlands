@@ -79,6 +79,7 @@ def test_bucket(bucket_dummy_path: str, monkeypatch: MonkeyPatch) -> str:
                 else:
                     chunk += line
             f.write(chunk)
+        return abspath.as_posix()
 
     LocalFileSystem = filesystems.LocalFileSystem
     LocalFileSystem.list_objects = mock_list_objects
