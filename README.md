@@ -23,7 +23,7 @@
 
 This project was started with the objective of making the Oryx's visually-confirmed losses for the Russo-Ukrainian War more accessible for analysis. While I am personally incurring the AWS costs, I greatly appreciate [donations](https://patreon.com/tarrodot?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_content=join_link) to help support the maintenance and growth of this project. Borderlands was built such that others may replicate the system privately should they choose to do so.
 
-Access to the data is publicly accessible via AWS CLI. To prevent misuse, the account requesting the data is [pays request and transfer costs](https://docs.aws.amazon.com/console/s3/requesterpaysbucket).
+Access to the data is publicly accessible via AWS CLI. To prevent misuse, the account requesting the data [pays request and transfer costs](https://docs.aws.amazon.com/console/s3/requesterpaysbucket).
 
 ## Project Structure
 
