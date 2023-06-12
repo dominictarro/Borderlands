@@ -165,6 +165,7 @@ async def trigger_extract_oryx_media(flow: Flow, flow_run: FlowRun, state: State
 def release_latest(df: pd.DataFrame) -> str:
     """Sets the latest.json file in the landing bucket."""
     records = df.applymap(lambda x: None if pd.isna(x) else x).to_dict(orient="records")
+    records = [dict(sorted(r.items())) for r in records]
     payload = dict(
         metadata=dict(
             name="oryx",
