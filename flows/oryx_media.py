@@ -1,6 +1,8 @@
 """
 Flow for retrieving media referenced in Oryx confirmed losses.
 """
+import datetime
+
 import pandas as pd
 from prefect import Flow, flow, task
 from prefect.artifacts import create_markdown_artifact
@@ -14,13 +16,13 @@ from borderlands.oryx import blocks
 from borderlands.oryx.media_stage.extract import postimg
 from borderlands.oryx.media_stage.extract.core import read_staged_loss
 from borderlands.oryx.media_stage.transform.basic import (
-    build_download_dataframe,
-    build_media_state,
+    filter_for_files_that_need_download,
+    join_media,
     update_with_results,
 )
 from borderlands.utilities.io_ import list_bucket, upload
 from borderlands.utilities.loggers import get_prefect_or_default_logger
-from borderlands.utilities.tasks import batch, batch_map, concat
+from borderlands.utilities.tasks import batch, batch_map, concat, tabulate_s3_objects
 
 
 def create_dataframe_markdown_artifact(
@@ -48,13 +50,37 @@ def make_batches(batch_size: int, df: pd.DataFrame) -> list[dict[str, str]]:
     )
 
 
+@task(persist_result=False)
+def update_with_new_key(df: pd.DataFrame, new: pd.DataFrame) -> pd.DataFrame:
+    """Updates a DataFrame with a new key.
+
+    Requires that both DataFrames have columns 'evidence_url' and 'key'.
+    """
+    df = df.merge(
+        new[["evidence_url", "key"]],
+        how="left",
+        on="evidence_url",
+        suffixes=("", "_new"),
+    )
+    df["key"] = df["key_new"].fillna(df["key"])
+    df = df.drop(columns=["key_new"])
+    return df
+
+
+@task(persist_result=False)
+def make_keys(df: pd.DataFrame) -> pd.DataFrame:
+    """Creates 'key' fields for a DataFrame."""
+    df["key"] = df["evidence_source"] + "/" + df["url_hash"]
+    return df
+
+
 @flow(
     name="Oryx Media Extraction Flow",
     description="Flow to extract media from staged Oryx losses.",
     # Hard to imagine this taking > 1 hour
     timeout_seconds=3600,
 )
-def extract_oryx_media(key: str | None = None):
+def extract_oryx_media(key: str | None = None) -> dict[str, str]:
     """Flow to extract media from staged Oryx losses."""
     logger = get_prefect_or_default_logger()
     # Scan the bucket for media files.
@@ -87,7 +113,10 @@ def extract_oryx_media(key: str | None = None):
 
     # Create a download dataframe.
     # Should contain evidence_url, url_hash, evidence_source, as_of_date
-    dl_df = build_download_dataframe(df, media_files)
+    media_df = tabulate_s3_objects(media_files)
+    df = join_media(df, media_df)
+    dl_df = filter_for_files_that_need_download(df)
+    dl_df = make_keys(dl_df)
 
     create_dataframe_markdown_artifact(
         dl_df.groupby(["evidence_source"])
@@ -103,29 +132,16 @@ def extract_oryx_media(key: str | None = None):
     logger.info(f"Downloading {len(postimg_dl_df)} postimg.cc images.")
     postimg_batches = make_batches(45, postimg_dl_df)
     postimg_keys = batch_map(postimg.extract_postimg_media, postimg_batches)
-    postimg_dl_df = update_with_results(postimg_dl_df, postimg_keys)
+    df = update_with_results(df, postimg_keys)
 
     create_dataframe_markdown_artifact(
         postimg_dl_df.describe(include="all"),
         "postimg-downloaded",
         description="Postimg.cc download results `df.describe()`.",
     )
-
-    dl_state = build_media_state(df, (postimg_dl_df,), ("postimg",))
-    upload.submit(
-        content=dl_state.to_csv(index=False),
-        key="media_state.csv",
-        bucket=blocks.assets_bucket,
-    )
-
-    create_dataframe_markdown_artifact(
-        dl_state.groupby(["evidence_source", "is_downloaded"])
-        .count()
-        .rename({"url_hash": "count"})
-        .reset_index(),
-        key="media-state",
-        description="Media state after extraction.",
-    )
+    # df = update_with_new_key(df, dl_df)
+    latest_key = release_latest(df)
+    logger.info(f"Successfully released latest.json to {latest_key}.")
 
 
 async def trigger_extract_oryx_media(flow: Flow, flow_run: FlowRun, state: State):
@@ -143,3 +159,28 @@ async def trigger_extract_oryx_media(flow: Flow, flow_run: FlowRun, state: State
             state=Scheduled(),
             tags=["oryx", "hook", flow_run.name],
         )
+
+
+@task
+def release_latest(df: pd.DataFrame) -> str:
+    """Sets the latest.json file in the landing bucket."""
+    records = df.applymap(lambda x: None if pd.isna(x) else x).to_dict(orient="records")
+    payload = dict(
+        metadata=dict(
+            name="oryx",
+            description=(
+                "A collection of confirmed losses of military equipment in the"
+                " Russo-Ukrainian War maintained in the open source database by Oryx."
+            ),
+            last_updated=datetime.datetime.utcnow().strftime(r"%Y-%m-%d %H:%M:%S %Z"),
+            references=[
+                "https://www.oryxspioenkop.com/",
+                "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-equipment.html",
+                "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html",
+                "https://tarro.work",
+                "https://github.com/dominictarro/Borderlands",
+            ],
+        ),
+        data=records,
+    )
+    return upload.fn(payload, "latest.json", blocks.landing_bucket)
