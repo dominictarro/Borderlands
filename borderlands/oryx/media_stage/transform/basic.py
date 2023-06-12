@@ -145,4 +145,5 @@ def update_with_results(
     # Update with latest keys
     df["key"] = df["key_dl"].fillna(df["key"])
     df = df.drop(columns=["key_dl"])
+    df = df.rename(columns={"key": "media_key"})
     return df
