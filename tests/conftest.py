@@ -1,6 +1,7 @@
 """
 Pytest configuration.
 """
+import datetime
 from io import FileIO
 from pathlib import Path
 
@@ -48,7 +49,12 @@ def test_bucket(bucket_dummy_path: str, monkeypatch: MonkeyPatch) -> str:
             basepath = basepath / folder
         for path in (basepath).iterdir():
             if path.is_file():
-                yield {"Key": path.relative_to(bucket_dummy_path).as_posix()}
+                yield {
+                    "Key": path.relative_to(bucket_dummy_path).as_posix(),
+                    "LastModified": datetime.datetime.fromtimestamp(
+                        path.lstat().st_mtime
+                    ),
+                }
             else:
                 dir = Path(folder) / path if folder is not None else path
                 yield from self.list_objects(folder=dir, *args, **kwargs)
