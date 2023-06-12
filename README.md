@@ -99,6 +99,7 @@ oryx/
     postimg/
       0009f56c7d0c60eab1538023ffb34111c874cba504c3787419006ac4de1b5e84.jpg
   landing/
+    latest.json
     year=2023/
       month=05/
         day=07/
@@ -110,7 +111,9 @@ These can be accessed via CLI
 
 `aws s3 ls s3://tarro-borderlands/oryx/`
 
-You can associate files in `oryx/media/` to records in `oryx/landing/` via a SHA-256 hash of a record's `evidence_url` field.
+The latest loss records can be accessed via
+
+`aws s3 cp s3://tarro-borderlands/oryx/landing/latest.json .`
 
 ### Pages
 
