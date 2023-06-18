@@ -23,6 +23,7 @@ isort = {extras = ["pyproject"], version = "*"}
 commitizen = "*"
 prefect-github = "*"
 pygit2 = "*"
+python-dotenv = "*"
 
 [requires]
 python_version = "3.11"
