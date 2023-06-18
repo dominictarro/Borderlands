@@ -1,3 +1,6 @@
+# Local virtual environment
+Pipfile.lock
+
 # Terraform state / deployment / output files
 .terraform/
 .terraform.lock.hcl
