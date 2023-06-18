@@ -4,8 +4,6 @@ terraform-plan: infrastructure/ infrastructure/main.tf infrastructure/variables.
 	terraform -chdir=infrastructure plan -var-file=terraform.tfvars -out=terraform.tfplan
 terraform-apply: terraform-plan
 	terraform -chdir=infrastructure apply "terraform.tfplan"
-terraform-destroy: infrastructure/ infrastructure/main.tf infrastructure/variables.tf infrastructure/terraform.tfvars
-	terraform -chdir=infrastructure destroy -var-file=terraform.tfvars
 terraform-docs: infrastructure/ infrastructure/main.tf
 	terraform-docs markdown infrastructure/ --header-from main.tf --output-file README.md --indent 2
 
