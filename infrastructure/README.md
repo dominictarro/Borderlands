@@ -42,6 +42,13 @@ No modules.
 | [aws_internet_gateway.borderlands_igw](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway) | resource |
 | [aws_route_table.borderlands_public_rt](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table) | resource |
 | [aws_route_table_association.borderlands_public_subnet_rt_association](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association) | resource |
+| [aws_s3_bucket.core_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket.media_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket.persistence_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
+| [aws_s3_bucket_lifecycle_configuration.persistence_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration) | resource |
+| [aws_s3_bucket_policy.core_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy) | resource |
+| [aws_s3_bucket_public_access_block.core_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_public_access_block) | resource |
+| [aws_s3_bucket_request_payment_configuration.media_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_request_payment_configuration) | resource |
 | [aws_secretsmanager_secret.prefect_api_key](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_secretsmanager_secret_version.prefect_api_key_version](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret_version) | resource |
 | [aws_security_group.prefect_agent](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
@@ -49,6 +56,7 @@ No modules.
 | [aws_subnet.borderlands_private_subnet](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) | resource |
 | [aws_subnet.borderlands_public_subnet](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) | resource |
 | [aws_vpc.borderlands_vpc](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc) | resource |
+| [aws_iam_policy_document.core_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document) | data source |
 | [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
 
 ## Inputs
@@ -64,9 +72,13 @@ No modules.
 | <a name="input_agent_queue_name"></a> [agent\_queue\_name](#input\_agent\_queue\_name) | Prefect queue that the agent should listen to | `string` | `"default"` | no |
 | <a name="input_agent_task_role_arn"></a> [agent\_task\_role\_arn](#input\_agent\_task\_role\_arn) | Optional task role ARN to pass to the agent. If not defined, a task role will be created | `string` | `null` | no |
 | <a name="input_name"></a> [name](#input\_name) | Unique name for this agent deployment | `string` | n/a | yes |
+| <a name="input_oryx_latest_release_key"></a> [oryx\_latest\_release\_key](#input\_oryx\_latest\_release\_key) | Key for the latest release file. | `string` | `"oryx/landing/latest.json"` | no |
 | <a name="input_prefect_account_id"></a> [prefect\_account\_id](#input\_prefect\_account\_id) | Prefect cloud account ID | `string` | n/a | yes |
 | <a name="input_prefect_api_key"></a> [prefect\_api\_key](#input\_prefect\_api\_key) | Prefect cloud API key | `string` | n/a | yes |
 | <a name="input_prefect_workspace_id"></a> [prefect\_workspace\_id](#input\_prefect\_workspace\_id) | Prefect cloud workspace ID | `string` | n/a | yes |
+| <a name="input_s3_bucket_core"></a> [s3\_bucket\_core](#input\_s3\_bucket\_core) | Name of the S3 bucket to store core files. | `string` | `"borderlands-core"` | no |
+| <a name="input_s3_bucket_media"></a> [s3\_bucket\_media](#input\_s3\_bucket\_media) | Name of the S3 bucket to store media files. | `string` | `"borderlands-media"` | no |
+| <a name="input_s3_bucket_persistence"></a> [s3\_bucket\_persistence](#input\_s3\_bucket\_persistence) | Name of the S3 bucket to store Prefect persistence files. | `string` | `"borderlands-persistence"` | no |
 | <a name="input_secrets_manager_recovery_in_days"></a> [secrets\_manager\_recovery\_in\_days](#input\_secrets\_manager\_recovery\_in\_days) | Deletion delay for AWS Secrets Manager upon resource destruction | `number` | `30` | no |
 | <a name="input_vpc_availability_zone"></a> [vpc\_availability\_zone](#input\_vpc\_availability\_zone) | Availability zone for the VPC. | `string` | `"us-east-1a"` | no |
 | <a name="input_vpc_cidr_block"></a> [vpc\_cidr\_block](#input\_vpc\_cidr\_block) | CIDR for the VPC. | `string` | `"10.0.0.0/16"` | no |
