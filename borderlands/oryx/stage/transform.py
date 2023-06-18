@@ -36,19 +36,17 @@ class Status(enum.Enum):
 
 # Keywords found in the loss descriptions and the status
 # they are associated with
-KEYWORD_STATUS_MAP = {
-    "captured": Status.CAPTURED,
-    "destroyed": Status.DESTROYED,
-    "damaged": Status.DAMAGED,
+STATUS_KEYWORD_MAP = {
+    Status.CAPTURED: ("captured",),
+    Status.DESTROYED: ("destroyed",),
     # Typo that should be accounted for
-    "damagd": Status.DAMAGED,
-    "abandoned": Status.ABANDONED,
+    Status.DAMAGED: ("damaged", "damagd"),
     # Typo that should be accounted for
-    "abanonded": Status.ABANDONED,
-    "scuttled": Status.SCUTTLED,
-    "stripped": Status.STRIPPED,
-    "sunk": Status.SUNK,
-    "raised": Status.RAISED,
+    Status.ABANDONED: ("abandoned", "abanonded"),
+    Status.SCUTTLED: ("scuttled",),
+    Status.STRIPPED: ("stripped",),
+    Status.SUNK: ("sunk",),
+    Status.RAISED: ("raised",),
 }
 
 
@@ -197,11 +195,12 @@ def assign_status(df: pd.DataFrame) -> pd.DataFrame:
     column_set: set = set()
     # A simple 'text contains' statement for each keyword
     # TODO Find a more robust method of assessing the status of the equipment
-    for keyword, status in KEYWORD_STATUS_MAP.items():
+    for status, keywords in STATUS_KEYWORD_MAP.items():
         df[status.value] = None
 
         column_set.add(status.value)
-        df.loc[df["description"].str.contains(keyword), status.value] = status.value
+        for keyword in keywords:
+            df.loc[df["description"].str.contains(keyword), status.value] = status.value
 
     columns = list(column_set)
     # Filters the row's individual status columns to only include those that
