@@ -17,7 +17,8 @@ Source data from the Oryx equipment losses page is structured like
     'country_of_production': 'SUN',
     'domain': 'twitter.com',
     'evidence_source': 'twitter',
-    'failed_duplicate_check': False
+    'failed_duplicate_check': False,
+    'url_hash': 'd41d8cd98f00b204e9800998ecf8427e'
 }
 ```
 
@@ -31,9 +32,9 @@ from prefect import task
 @task
 def convert_to_dataframe(pages: list[list]) -> pd.DataFrame:
     """Converts a list of lists into a single DataFrame.
-    
+
     Each document in the list of lists is a dictionary like
-    
+
     """
     data = []
     for page in pages:
@@ -43,83 +44,106 @@ def convert_to_dataframe(pages: list[list]) -> pd.DataFrame:
 
 
 @task
-def build_download_dataframe(df: pd.DataFrame, media_files: list[str]) -> pd.DataFrame:
-    """Creates a DataFrame with URLs and their hashes to download.
+def join_media(df: pd.DataFrame, media_df: pd.DataFrame) -> pd.DataFrame:
+    """Creates a DataFrame that associates existing media files with the records.
 
-    Output columns: evidence_source, evidence_url, url_hash, key
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame of records to associate with existing media files.
+    media_files : list[dict[str, Any]]
+        DataFrame of the media files that exist in the bucket.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame of records with associated media files.
+
+    Notes
+    -----
+
+    Returned DataFrame will be like:
+
+    | evidence_source | url_hash | ... | key |
+    |-----------------|----------|-----|-----|
+    | twitter         | abc123   | ... | None|
+    | twitter         | def456   | ... | media/def456.jpg|
+    | postimg         | abc124   | ... | media/abc124.jpg|
+
     """
-    # Create keys to associate with the media files
-    dl_df = df.groupby(["evidence_url", "evidence_source", "url_hash"], as_index=False).count()
-    dl_df["assoc_key"] = dl_df["evidence_source"] + "_" + dl_df["url_hash"]
-    # Calculate the key for the media files
-    # This is the same as the assoc_key, but evidence sources are folders
-    dl_df["key"] = dl_df["evidence_source"] + "/" + dl_df["url_hash"]
+    # Extract the filename from the key: "path/to/evidence_source/url_hash.ext"
+    media_df["filename"] = media_df["Key"].apply(lambda k: Path(k).parts[-1])
+    media_df["evidence_source"] = media_df["Key"].apply(lambda k: Path(k).parent.stem)
+    # Extract the hash from the filename: "url_hash.ext"
+    media_df["url_hash"] = media_df["Key"].apply(lambda k: Path(k).stem)
 
-    # The first bucket scan before extracting will find 0 files. This prevents a crash in that case
-    if media_files:
-        media_df = pd.DataFrame(media_files)
-    else:
-        # No files to load?
-        media_df = pd.DataFrame([], columns=["Key"])
+    # Deduplicate url_hashses that have multiple files. Choose the most recent
+    media_df = (
+        media_df.sort_values(["LastModified"], ascending=False)
+        .groupby(["evidence_source", "url_hash"], as_index=False)
+        .first()
+    )
 
-    # Extract the filename from the key: "path/to/file.ext" -> "file"
-    media_df["Filename"] = media_df["Key"].apply(lambda k: Path(k).stem)
-    media_df["Folder"] = media_df["Key"].apply(lambda k: Path(k).parent.stem)
-    # Create a key to associate with the records
-    media_df["assoc_key"] = media_df["Folder"] + "_" + media_df["Filename"]
     # Mark the files as downloaded
-    media_df["is_downloaded"] = True
+    media_df = media_df.rename(columns={"Key": "key"})
+    media_df = media_df[["evidence_source", "url_hash", "key"]]
 
     # Merge the two DataFrames
-    dl_df = dl_df.merge(media_df, on="assoc_key", how="left", validate="one_to_one")
+    df = df.merge(
+        media_df, on=["evidence_source", "url_hash"], how="left", validate="many_to_one"
+    )
+    return df
 
+
+@task
+def filter_for_files_that_need_download(df_state: pd.DataFrame) -> pd.DataFrame:
+    """Filters the media state DataFrame for files that need to be downloaded.
+
+    Parameters
+    ----------
+    df_state : pd.DataFrame
+        DataFrame of records where a 'key' exists if the record's evidence has already been downloaded.
+
+    """
     # Filter out already downloaded files
-    dl_df = dl_df[dl_df["is_downloaded"].isna()]
+    dl_df = df_state[df_state["key"].isna()]
+    # Deduplicate the URLs that need to be downloaded
+    dl_df = dl_df.drop_duplicates(["evidence_url"], keep="first")
     return dl_df[["evidence_source", "evidence_url", "url_hash", "key"]]
 
 
 @task
-def update_with_results(df: pd.DataFrame, results: list[str]) -> pd.DataFrame:
+def update_with_results(
+    df: pd.DataFrame, results: list[dict[str, str | None]]
+) -> pd.DataFrame:
     """Associate rows in a DataFrame with their download results.
 
-    Results are a list of strings like `"path/to/source_hash.ext"` when they
-    download successfully, or `None` when they fail. This function adds a
-    column to the DataFrame indicating whether the download succeeded or not.
-    """
-    df["is_downloaded"] = pd.Series(results).notnull()
-    return df
+    Input media files are a list of dictionaries like
 
+    ```python
+    {
+        "evidence_url": "https://....",
+        "key": "path/to/file.ext",
+    }
+    {
+        "evidence_url": "https://....",
+        "key": None,
+    }
+    ```
 
-@task(persist_result=False)
-def build_media_state(df: pd.DataFrame, dl_dfs: tuple[pd.DataFrame], include: tuple[str]) -> pd.DataFrame:
-    """Builds a lookup table for media files based on the download dataframes
-    with updated results.
+    Outputs a DataFrame with the result keys merged in.
+
     """
-    dl_df = pd.concat(dl_dfs)
+    dl_result_df = pd.DataFrame(results, columns=["evidence_url", "key"])
     df = df.merge(
-        dl_df,
+        dl_result_df,
         on="evidence_url",
         how="left",
         validate="many_to_one",
-        suffixes=("", "_dl")
+        suffixes=("", "_dl"),
     )
-
-    # df does not have a is_downloaded column
-    # dl_df does have an is_downloaded column
-    #
-    # After the merge, df will have an is_downloaded column but the rows that
-    # were not considered for download will have nulls. Use this to judge
-    # download status.
-    #
-    # If the key is null, then the file was excluded from the download df
-    # because it was already downloaded. Mark it as downloaded.
-    # If the key is not null, then the file was attempted to be downloaded.
-    # Mark it as downloaded if the download succeeded.
-    #
-    # Some evidence sources are not included in the download df. Only allow the
-    # ones that are included to use the above logic.
-    df["is_downloaded"] = (df["key"].isnull() | df["is_downloaded"]) & df["evidence_source"].isin(include)
-
-    # This is the state of the downloads
-    df = df[["evidence_source", "url_hash", "is_downloaded"]]
-    return df.sort_values(["evidence_source", "url_hash"], ignore_index=True)
+    # Update with latest keys
+    df["key"] = df["key_dl"].fillna(df["key"])
+    df = df.drop(columns=["key_dl"])
+    df = df.rename(columns={"key": "media_key"})
+    return df

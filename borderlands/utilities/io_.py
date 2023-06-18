@@ -15,21 +15,21 @@ from prefect_aws import S3Bucket
 
 
 @task
-def list_bucket(bucket: S3Bucket, **kwds) -> list[str]:
+def list_bucket(bucket: S3Bucket, **kwds) -> list[dict[str, Any]]:
     """Lists the contents of a bucket.
 
     Parameters
     ----------
     bucket : S3Bucket
-    
+
     Returns
     ----------
     list[str]
     List of boto3 objects.
-    
+
     Examples
     ----------
-    
+
     >>> list_bucket.fn(bucket)
     [
         {
@@ -93,7 +93,9 @@ def upload(
     return path
 
 
-def infer_media_extension(url: str | None = None, headers: dict | None = None) -> str | None:
+def infer_media_extension(
+    url: str | None = None, headers: dict | None = None
+) -> str | None:
     """Infers the best media extension give request headers and the URL."""
     mtype: str | None = None
 

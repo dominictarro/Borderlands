@@ -4,7 +4,7 @@ Generic tasks for the Borderlands project.
 from typing import Any
 
 import pandas as pd
-from prefect import task, states
+from prefect import states, task
 from prefect.futures import PrefectFuture
 from prefect.tasks import Task
 
@@ -38,7 +38,9 @@ def batch(batch_size: int, **kwds) -> list[dict[str, Any]]:
     if len(parameters) > 1:
         for k in parameters[1:]:
             if not len(kwds[k]) == length:
-                raise ValueError(f"Expected all iterables to be of length {length} like '{parameters[0]}'. '{k}' is length {len(kwds[k])}.")
+                raise ValueError(
+                    f"Expected all iterables to be of length {length} like '{parameters[0]}'. '{k}' is length {len(kwds[k])}."
+                )
 
     batches = []
     current_batch = {p: [] for p in parameters}
@@ -79,7 +81,7 @@ def batch_map(task: Task, batches: list[dict[str, Any]]) -> list[Any]:
                     states.Running,
                     states.Pending,
                     states.Retrying,
-                    states.AwaitingRetry
+                    states.AwaitingRetry,
                 ):
                     is_complete = False
                     break
@@ -97,3 +99,26 @@ def batch_map(task: Task, batches: list[dict[str, Any]]) -> list[Any]:
 def depaginate(pages: list[list[Any]]) -> list[Any]:
     """Depaginate a list of pages into a single list."""
     return sum(pages, [])
+
+
+@task
+def tabulate_s3_objects(objects: list[dict[str, Any]]) -> pd.DataFrame:
+    """Converts a list of S3 objects into a DataFrame.
+
+    S3 objects are dictionaries like
+
+    ```python
+    {
+        "Key": "path/to/file.ext",
+        "LastModified": datetime.datetime(2021, 1, 1, 0, 0, 0),
+        "ETag": "abc123",
+        "Size": 123,
+        "StorageClass": "STANDARD",
+    }
+    ```
+    """
+    df = pd.DataFrame(
+        objects,
+        columns=["Key", "LastModified", "ETag", "Size", "StorageClass"],
+    )
+    return df
