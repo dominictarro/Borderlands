@@ -12,7 +12,7 @@ from flows.oryx_stage import stage_oryx_equipment_losses
 oryx_deployment: Deployment = Deployment.build_from_flow(
     flow=stage_oryx_equipment_losses,
     name="Daily",
-    description="Deployment of the Oryx staging pipeline that runs twice a day.",
+    description="Deployment of the Oryx staging pipeline that runs daily.",
     schedule=CronSchedule(cron="0 0 * * *", timezone="America/New_York"),
     storage=borderlands_github,
     infrastructure=oryx_ecs_task,
