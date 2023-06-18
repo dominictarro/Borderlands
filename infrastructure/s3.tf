@@ -26,7 +26,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "persistence_bucket" {
             noncurrent_days = 10
         }
     }
-
 }
 
 /*
@@ -51,37 +50,37 @@ resource "aws_s3_bucket" "core_bucket" {
 
 # Make public access possible
 resource "aws_s3_bucket_public_access_block" "core_bucket" {
-  bucket = aws_s3_bucket.core_bucket.id
+    bucket = aws_s3_bucket.core_bucket.id
 
-  block_public_acls       = true
-  block_public_policy     = false
-  ignore_public_acls      = true
-  restrict_public_buckets = false
+    block_public_acls       = true
+    block_public_policy     = false
+    ignore_public_acls      = true
+    restrict_public_buckets = false
 }
 
 # Restrict public access to read/list only
 resource "aws_s3_bucket_policy" "core_bucket" {
-  bucket = aws_s3_bucket.core_bucket.id
-  policy = data.aws_iam_policy_document.core_bucket.json
+    bucket = aws_s3_bucket.core_bucket.id
+    policy = data.aws_iam_policy_document.core_bucket.json
 }
 
 
 data "aws_iam_policy_document" "core_bucket" {
     statement {
-            principals {
-                type = "*"
-                identifiers = ["*"]
-            }
+        principals {
+            type = "*"
+            identifiers = ["*"]
+        }
 
-            actions = [
-                "s3:GetObject",
-                "s3:ListBucket",
-            ]
+        actions = [
+            "s3:GetObject",
+            "s3:ListBucket",
+        ]
 
-            resources = [
-                aws_s3_bucket.core_bucket.arn,
-                "${aws_s3_bucket.core_bucket.arn}/*",
-            ]
+        resources = [
+            aws_s3_bucket.core_bucket.arn,
+            "${aws_s3_bucket.core_bucket.arn}/*",
+        ]
     }
 }
 
@@ -94,7 +93,6 @@ variable "s3_bucket_media" {
     type = string
     description = "Name of the S3 bucket to store media files."
     default = "borderlands-media"
-    
 }
 
 resource "aws_s3_bucket" "media_bucket" {
@@ -102,6 +100,6 @@ resource "aws_s3_bucket" "media_bucket" {
 }
 
 resource "aws_s3_bucket_request_payment_configuration" "media_bucket" {
-  bucket = aws_s3_bucket.media_bucket.id
-  payer  = "Requester"
+    bucket = aws_s3_bucket.media_bucket.id
+    payer  = "Requester"
 }
