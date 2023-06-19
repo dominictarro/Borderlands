@@ -2,9 +2,8 @@
 
 # Borderlands
 
-![](https://patreon.com/tarrodot?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_content=join_link)
 <a href="https://patreon.com/tarrodot" target="_blank"><img src="https://img.shields.io/badge/Donate-Patreon-blue"></a>
-<a href="https://tarro-borderlands.s3.amazonaws.com/oryx/landing/latest.json" target="_blank"><img src="https://img.shields.io/badge/Oryx_Dataset-fff"></a>
+<a href="https://borderlands-core.s3.amazonaws.com/landing/latest.json" target="_blank"><img src="https://img.shields.io/badge/Oryx_Dataset-fff"></a>
 
 *ETL for Russo-Ukrainian war data.*
 
@@ -17,14 +16,14 @@
     - [Prefect UI](#prefect-ui)
   - [Visually-confirmed equipment losses](#visually-confirmed-equipment-losses)
     - [Access](#access)
+      - [Records](#records)
+      - [Media](#media)
     - [Pages](#pages)
   - [References](#references)
 
 ## Introduction
 
 This project was started with the objective of making the Oryx's visually-confirmed losses for the Russo-Ukrainian War more accessible for analysis. While I am personally incurring the AWS costs, I greatly appreciate [donations](https://patreon.com/tarrodot?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_content=join_link) to help support the maintenance and growth of this project. Borderlands was built such that others may replicate the system privately should they choose to do so.
-
-
 
 ## Project Structure
 
@@ -90,19 +89,29 @@ the Oryx team at [Patreon](https://www.patreon.com/oryxspioenkop).
 
 ### Access
 
-Public permission is limited to reading and listing within the `oryx/media/` and `oryx/landing/` directories.
+#### Records
 
-Media files are organized by image source, while loss records are organized by datetime extracted. For example,
+Oryx loss records are free and publicly available via [HTTPS](https://borderlands-core.s3.amazonaws.com/landing/latest.json) and S3.
 
+```shell
+curl https://borderlands-core.s3.amazonaws.com/landing/latest.json -o latest.json
+```
 
+```shell
+aws s3 cp s3://borderlands-core/landing/latest.json .
+```
 
-These can be accessed via CLI
+#### Media
 
-`aws s3 ls s3://tarro-borderlands/oryx/`
+The media files are publicly available via S3, but the requester (you) [shoulders the AWS costs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ObjectsinRequesterPaysBuckets.html).
 
-The latest loss records can be accessed via
+```shell
+aws s3 ls s3://borderlands-media/postimg/
+```
 
-`aws s3 cp s3://tarro-borderlands/oryx/landing/latest.json .`
+```shell
+aws s3 cp s3://borderlands-media/postimg/$FILENAME .
+```
 
 ### Pages
 
@@ -112,3 +121,4 @@ The latest loss records can be accessed via
 ## References
 
 - [ISO Codes](https://www.iso.org/obp/ui/#home)
+- [Infrastructure](./infrastructure/README.md)

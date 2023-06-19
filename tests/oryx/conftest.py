@@ -17,7 +17,7 @@ from borderlands.utilities.blocks import create_child_bucket, task_persistence_s
 @pytest.fixture
 def bucket_dummy_path(output_path: Path) -> Path:
     """Path to the dummy bucket."""
-    dummy = output_path / "oryx-dummy-bucket"
+    dummy = output_path / "oryx-dummy-buckets"
     dummy.mkdir(exist_ok=True)
     return dummy
 
@@ -80,7 +80,9 @@ def landed_file_path(test_data_path: Path) -> Path:
 def oryx_bucket(test_bucket: filesystems.LocalFileSystem, monkeypatch: MonkeyPatch):
     from borderlands.oryx import blocks
 
-    oryx_bucket = create_child_bucket("oryx", "-oryx", test_bucket, save=True)
+    oryx_bucket = create_child_bucket(
+        "borderlands-core", "-core", test_bucket, save=True
+    )
     monkeypatch.setattr(blocks, "oryx_bucket", oryx_bucket)
     yield oryx_bucket
 
@@ -88,6 +90,7 @@ def oryx_bucket(test_bucket: filesystems.LocalFileSystem, monkeypatch: MonkeyPat
 @pytest.fixture
 def oryx_landing_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
     landing_bucket = create_child_bucket("landing", "-landing", oryx_bucket)
+    Path(landing_bucket.basepath).mkdir(exist_ok=True, parents=True)
     from borderlands.oryx import blocks
 
     monkeypatch.setattr(blocks, "landing_bucket", landing_bucket)
@@ -95,8 +98,9 @@ def oryx_landing_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture
-def oryx_media_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
-    media_bucket = create_child_bucket("media", "-media", oryx_bucket)
+def oryx_media_bucket(test_bucket: Path, monkeypatch: MonkeyPatch):
+    media_bucket = create_child_bucket("borderlands-media", "-media", test_bucket)
+    Path(media_bucket.basepath).mkdir(exist_ok=True, parents=True)
     from borderlands.oryx import blocks
 
     monkeypatch.setattr(blocks, "media_bucket", media_bucket)
@@ -106,6 +110,7 @@ def oryx_media_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
 @pytest.fixture
 def oryx_assets_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
     assets_bucket = create_child_bucket("assets", "-assets", oryx_bucket)
+    Path(assets_bucket.basepath).mkdir(exist_ok=True, parents=True)
     from borderlands.oryx import blocks
 
     monkeypatch.setattr(blocks, "assets_bucket", assets_bucket)
@@ -113,8 +118,11 @@ def oryx_assets_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
 
 
 @pytest.fixture
-def oryx_persistence_bucket(oryx_bucket: Path, monkeypatch: MonkeyPatch):
-    persistence_bucket = create_child_bucket("persistence", "-persistence", oryx_bucket)
+def oryx_persistence_bucket(test_bucket: Path, monkeypatch: MonkeyPatch):
+    persistence_bucket = create_child_bucket(
+        "borderlands-persistence", "-persistence", test_bucket
+    )
+    Path(persistence_bucket.basepath).mkdir(exist_ok=True, parents=True)
     from borderlands.oryx import blocks
 
     monkeypatch.setattr(blocks, "persistence_bucket", persistence_bucket)
