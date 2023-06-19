@@ -74,6 +74,28 @@ def make_keys(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+@task(persist_result=False)
+def deduplicate(df: pd.DataFrame) -> pd.DataFrame:
+    """Deduplicates a DataFrame."""
+    df = df.sort_values(
+        ["as_of_date", "evidence_url"], ignore_index=True, ascending=False
+    )
+    # Use the core fields to deduplicate. Oryx-created duplicates are retained by
+    # including the description field (unless they use the exact same description,
+    # which is unlikely)
+    return df.drop_duplicates(
+        subset=[
+            "country",
+            "category",
+            "model",
+            "evidence_url",
+            "description",
+            "id_",
+        ],
+        keep="first",
+    )
+
+
 @flow(
     name="Oryx Media Extraction Flow",
     description="Flow to extract media from staged Oryx losses.",
@@ -101,6 +123,7 @@ def extract_oryx_media(key: str | None = None) -> dict[str, str]:
         file_df = read_staged_loss.submit(s3_obj["Key"])
         dataframes.append(file_df)
     df: pd.DataFrame = concat(dataframes)
+    df = deduplicate(df)
 
     # Create a staged artifact.
     create_dataframe_markdown_artifact(
