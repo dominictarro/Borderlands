@@ -13,6 +13,7 @@ marshmallow = "*"
 pytest = "*"
 pandas = "*"
 tabulate = "*"
+prefecto = ">=0.0.3"
 
 [dev-packages]
 pipenv = "*"
@@ -24,6 +25,9 @@ commitizen = "*"
 prefect-github = "*"
 pygit2 = "*"
 python-dotenv = "*"
+moto = ">=3.1.16"
+prefecto = {extras = ["moto"], version = ">=0.0.3"}
+prefect = {version = ">=0.0.3", extras = ["mock"]}
 
 [requires]
 python_version = "3.11"
