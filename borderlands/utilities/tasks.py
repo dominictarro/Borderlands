@@ -7,8 +7,7 @@ import pandas as pd
 from prefect import states, task
 from prefect.futures import PrefectFuture
 from prefect.tasks import Task
-
-from ..utilities.loggers import get_prefect_or_default_logger
+from prefecto.logging import get_prefect_or_default_logger
 
 concat = task(pd.concat)
 

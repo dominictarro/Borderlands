@@ -11,6 +11,7 @@ from prefect.client.orchestration import get_client
 from prefect.engine import FlowRun
 from prefect.server.schemas.responses import DeploymentResponse
 from prefect.states import Scheduled, State
+from prefecto.logging import get_prefect_or_default_logger
 
 from borderlands.oryx import blocks
 from borderlands.oryx.media_stage.extract import postimg
@@ -21,7 +22,6 @@ from borderlands.oryx.media_stage.transform.basic import (
     update_with_results,
 )
 from borderlands.utilities.io_ import list_bucket, upload
-from borderlands.utilities.loggers import get_prefect_or_default_logger
 from borderlands.utilities.tasks import batch, batch_map, concat, tabulate_s3_objects
 
 

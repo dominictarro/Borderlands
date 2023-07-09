@@ -4,8 +4,7 @@ Module for manipulating Prefect Blocks.
 from pathlib import Path
 
 from prefect_aws import S3Bucket
-
-from .loggers import get_prefect_or_default_logger
+from prefecto.logging import get_prefect_or_default_logger
 
 
 def create_bucket_with_resolved_subpath(
