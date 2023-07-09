@@ -4,9 +4,9 @@ Extraction module for postimg.cc.
 import requests
 from prefect.serializers import CompressedJSONSerializer
 from prefect.tasks import exponential_backoff, task
+from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 
-from ....utilities.blocks import task_persistence_subfolder
 from ....utilities.io_ import infer_media_extension
 from ....utilities.web import USER_AGENT
 from ... import blocks
