@@ -1,24 +1,26 @@
 """
 Pytest configuration.
 """
-import datetime
-from io import FileIO
+import gzip
+import json
+import shutil
 from pathlib import Path
 
+import bs4
 import pytest
+from _pytest.fixtures import FixtureRequest, SubRequest
 from _pytest.monkeypatch import MonkeyPatch
-from prefect import filesystems
 from prefect.testing.utilities import prefect_test_harness
+from prefect_aws import S3Bucket
+from prefecto.testing.s3 import mock_bucket
+
+from borderlands.oryx.oryx_parser.article import ArticleParser
 
 TESTS_PATH: Path = Path(__file__).parent
-
-
-@pytest.fixture
-def output_path() -> Path:
-    """Path to the output directory."""
-    output_path = TESTS_PATH / "output"
-    output_path.mkdir(exist_ok=True)
-    return output_path
+EXPORT_PATH: Path = TESTS_PATH / "export"
+if EXPORT_PATH.is_dir():
+    shutil.rmtree(EXPORT_PATH)
+EXPORT_PATH.mkdir(exist_ok=True)
 
 
 @pytest.fixture
@@ -27,79 +29,157 @@ def test_data_path() -> Path:
     return TESTS_PATH / "data"
 
 
-# Sets the test harness so prefect flow tests are not recorded in the Orion
-# database.
-#
-# I use this at the session-level so that all flows are run within the same
-# environment.
 @pytest.fixture(autouse=True, scope="session")
-def with_test_harness():
+def prefect_db():
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
         yield
 
 
+@pytest.fixture(autouse=False, scope="function")
+def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
+    """Mocks the S3 buckets."""
+    export_path = EXPORT_PATH / request.function.__name__
+    with mock_bucket("borderlands-core", export_path=export_path):
+        core = S3Bucket(bucket_name="borderlands-core")
+        core.save(name="s3-bucket-borderlands-core", overwrite=True)
+        core.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
+        with mock_bucket(
+            "borderlands-media", export_path=export_path, activate_moto=False
+        ):
+            S3Bucket(bucket_name="borderlands-media").save(
+                name="s3-bucket-borderlands-media", overwrite=True
+            )
+            with mock_bucket(
+                "borderlands-persistence", export_path=export_path, activate_moto=False
+            ):
+                S3Bucket(bucket_name="borderlands-persistence").save(
+                    name="s3-bucket-borderlands-persistence", overwrite=True
+                )
+                yield
+
+
 @pytest.fixture
-def test_bucket(bucket_dummy_path: str, monkeypatch: MonkeyPatch) -> str:
-    """Path to the test bucket."""
+def oryx_descriptions(test_data_path: Path) -> list[str]:
+    """Descriptions of the Oryx articles."""
+    with open(test_data_path / "descriptions.txt", "r") as fo:
+        return [line.strip() for line in fo.readlines()]
 
-    def mock_list_objects(self, folder: str | None = None, *args, **kwargs):
-        basepath = Path(self.basepath)
-        if folder is not None:
-            basepath = basepath / folder
-        for path in (basepath).iterdir():
-            if path.is_file():
-                yield {
-                    "Key": path.relative_to(bucket_dummy_path).as_posix(),
-                    "LastModified": datetime.datetime.fromtimestamp(
-                        path.lstat().st_mtime
-                    ),
-                }
-            else:
-                dir = Path(folder) / path if folder is not None else path
-                yield from self.list_objects(folder=dir, *args, **kwargs)
 
-    def mock_read_path(self, key: str) -> bytes:
-        return (Path(self.basepath) / key).read_bytes()
+@pytest.fixture
+def oryx_evidence_urls(test_data_path: Path) -> list[str]:
+    """URLs of the Oryx evidence."""
+    with open(test_data_path / "evidence_urls.txt", "r") as fo:
+        return [line.strip() for line in fo.readlines()]
 
-    def mock_upload_from_file_object(self, fo: FileIO, key: str):
-        dir = Path(key).parent
-        abspath = Path(self.basepath) / dir
-        abspath.mkdir(parents=True, exist_ok=True)
-        absfile = abspath / Path(key).name
 
-        # Write the file to the dummy bucket.
-        with open(absfile, "wb") as f:
-            chunk_size = 1024 * 1024
-            chunk: bytes = b""
-            for i, line in enumerate(fo):
-                if i % chunk_size == 0:
-                    f.write(chunk)
-                    chunk = line
-                else:
-                    chunk += line
-            f.write(chunk)
-        return abspath.as_posix()
+@pytest.fixture
+def oryx_flag_urls(test_data_path: Path) -> list[str]:
+    """URLs of the Oryx flags."""
+    with open(test_data_path / "country_of_production_flag_urls.txt", "r") as fo:
+        return [line.strip() for line in fo.readlines()]
 
-    LocalFileSystem = filesystems.LocalFileSystem
-    LocalFileSystem.list_objects = mock_list_objects
-    LocalFileSystem.read_path = mock_read_path
-    LocalFileSystem.upload_from_file_object = mock_upload_from_file_object
-    monkeypatch.setattr(filesystems, "LocalFileSystem", LocalFileSystem)
 
-    bucket: filesystems.LocalFileSystem = LocalFileSystem(
-        _block_document_name="test-bucket",
-        _is_anonymous=True,
-        basepath=str(bucket_dummy_path.absolute()),
+@pytest.fixture
+def flag_url_mapper(test_data_path: Path) -> dict[str, str]:
+    """URLs of the Oryx flags."""
+    with open(
+        test_data_path
+        / "buckets/borderlands-core/assets/country_of_production_url_mapping.json",
+        "r",
+    ) as fo:
+        data = json.load(fo)
+        return {k: v["Alpha-3"] for k, v in data.items()}
+
+
+@pytest.fixture(autouse=False, scope="function")
+def mock_oryx_page_request(test_data_path: Path, monkeypatch: MonkeyPatch):
+    """Mock the Cvent API to prevent API rate limit excession."""
+    import requests
+
+    def mock_request_page(url: str, *args, **kwds) -> requests.Response:
+        """Mocks the extract_pages function to use a file in the tests/data directory."""
+        filename: str | None = None
+        if "www.oryxspioenkop.com" in url:
+            folder = test_data_path / "pages"
+            if (
+                url
+                == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-equipment.html"
+            ):
+                filename = "russia.html.gz"
+            elif (
+                url
+                == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html"
+            ):
+                filename = "ukraine.html.gz"
+
+            with gzip.open(folder / filename, "rb") as f:
+                response = requests.Response()
+                response.status_code = 200
+                response._content = f.read()
+                return response
+
+        elif "postimg.cc" in url:
+            # https://i.postimg.cc/vm6DrVLL/h79.jpg
+            # -> images/vm6DrVLL-h79.jpg
+            parts = url.split("/")
+            filename = f"{parts[-2]}-{parts[-1]}"
+            folder = test_data_path / "images"
+            # These are being streamed in chunks
+            response = requests.Response()
+            response.status_code = 200
+            response.raw = open(folder / filename, "rb")
+            return response
+        else:
+            raise ValueError(f"URL not mocked: {url}")
+
+    monkeypatch.setattr(requests, "get", mock_request_page)
+    yield
+
+
+@pytest.fixture
+def oryx_ukraine_webpage(test_data_path: Path) -> bs4.Tag:
+    """Path to the Oryx Ukraine webpage."""
+    with gzip.open(test_data_path / "pages" / "ukraine.html.gz", "r") as fo:
+        return bs4.BeautifulSoup(fo.read(), features="html.parser")
+
+
+@pytest.fixture
+def oryx_russia_webpage(test_data_path: Path) -> bs4.Tag:
+    """Path to the Oryx Ukraine webpage."""
+    with gzip.open(test_data_path / "pages" / "russia.html.gz", "r") as fo:
+        return bs4.BeautifulSoup(fo.read(), features="html.parser")
+
+
+@pytest.fixture
+def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> ArticleParser:
+    """An `ArticleParser` object."""
+    body = oryx_ukraine_webpage.find(
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    bucket._block_document_id = bucket._save(
-        "test-bucket",
-        is_anonymous=True,
-        overwrite=True,
+    from borderlands.oryx.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
+
+    yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
+
+
+@pytest.fixture
+def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> ArticleParser:
+    """An `ArticleParser` object."""
+    body = oryx_russia_webpage.find(
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
+    from borderlands.oryx.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
 
-    from borderlands import storage
+    yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
 
-    monkeypatch.setattr(storage, "bucket", bucket)
 
-    yield bucket
+@pytest.fixture
+def ukraine_page_parse_result(ukraine_article_parser: ArticleParser) -> list:
+    """The result of parsing the Ukraine page."""
+    yield list(ukraine_article_parser.parse())
+
+
+@pytest.fixture
+def russia_page_parse_result(russia_article_parser: ArticleParser) -> list:
+    """The result of parsing the Russia page."""
+    yield list(russia_article_parser.parse())

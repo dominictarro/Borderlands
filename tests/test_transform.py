@@ -2,7 +2,9 @@
 Test the result of transforming Oryx data.
 """
 import pandas as pd
+import pytest
 
+from borderlands.oryx.oryx_parser.article import ArticleParser
 from borderlands.oryx.stage.transform import (
     EvidenceSource,
     Status,
@@ -12,6 +14,18 @@ from borderlands.oryx.stage.transform import (
     flag_duplicate_natural_keys,
     tabulate_loss_cases,
 )
+
+
+@pytest.fixture
+def ukraine_page_parse_result(ukraine_article_parser: ArticleParser) -> list:
+    """The result of parsing the Ukraine page."""
+    yield list(ukraine_article_parser.parse())
+
+
+@pytest.fixture
+def russia_page_parse_result(russia_article_parser: ArticleParser) -> list:
+    """The result of parsing the Russia page."""
+    yield list(russia_article_parser.parse())
 
 
 def test_tabulate_loss_cases(
