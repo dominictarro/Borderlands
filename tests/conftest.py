@@ -11,10 +11,10 @@ import pytest
 from _pytest.fixtures import FixtureRequest, SubRequest
 from _pytest.monkeypatch import MonkeyPatch
 from prefect.testing.utilities import prefect_test_harness
-from prefect_aws import S3Bucket
+from prefect_aws import AwsCredentials, S3Bucket
 from prefecto.testing.s3 import mock_bucket
 
-from borderlands.oryx.oryx_parser.article import ArticleParser
+from borderlands.oryx_parser.article import ArticleParser
 
 TESTS_PATH: Path = Path(__file__).parent
 EXPORT_PATH: Path = TESTS_PATH / "export"
@@ -40,6 +40,7 @@ def prefect_db():
 def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
     """Mocks the S3 buckets."""
     export_path = EXPORT_PATH / request.function.__name__
+    AwsCredentials().save(name="aws-credentials-prefect", overwrite=True)
     with mock_bucket("borderlands-core", export_path=export_path):
         core = S3Bucket(bucket_name="borderlands-core")
         core.save(name="s3-bucket-borderlands-core", overwrite=True)
@@ -157,7 +158,7 @@ def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> ArticleParser:
     body = oryx_ukraine_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    from borderlands.oryx.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
+    from borderlands.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
 
     yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
 
@@ -168,7 +169,7 @@ def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> ArticleParser:
     body = oryx_russia_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    from borderlands.oryx.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
+    from borderlands.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
 
     yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
 

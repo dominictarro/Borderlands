@@ -4,8 +4,8 @@ Test the result of transforming Oryx data.
 import pandas as pd
 import pytest
 
-from borderlands.oryx.oryx_parser.article import ArticleParser
-from borderlands.oryx.stage.transform import (
+from borderlands.oryx_parser.article import ArticleParser
+from borderlands.stage.transform import (
     EvidenceSource,
     Status,
     assign_country_of_production,

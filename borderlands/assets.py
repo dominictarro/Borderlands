@@ -8,7 +8,7 @@ from typing import Dict
 
 from prefect import task
 
-from . import blocks
+from . import storage
 
 
 def get_asset(asset_name: str) -> str:
@@ -24,7 +24,7 @@ def get_asset(asset_name: str) -> str:
     str
         Asset
     """
-    return blocks.assets_bucket.read_path(asset_name)
+    return storage.assets_bucket.read_path(asset_name)
 
 
 @task

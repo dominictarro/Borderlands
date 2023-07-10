@@ -1,7 +1,7 @@
 """
 Tests for the article parser.
 """
-from borderlands.oryx.oryx_parser.article import ArticleParser
+from borderlands.oryx_parser.article import ArticleParser
 
 
 def test_ukraine_page_parse(ukraine_article_parser: ArticleParser):

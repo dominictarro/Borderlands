@@ -6,12 +6,12 @@ from __future__ import annotations
 from prefect import flow
 from prefect.context import FlowRunContext, get_run_context
 
-from borderlands.oryx import assets, blocks
-from borderlands.oryx.stage.extract import (
+from borderlands import assets, storage
+from borderlands.stage.extract import (
     get_russian_equipment_loss_page,
     get_ukrainian_equipment_loss_page,
 )
-from borderlands.oryx.stage.transform import (
+from borderlands.stage.transform import (
     assign_country_of_production,
     assign_evidence_source,
     assign_status,
@@ -68,13 +68,13 @@ def stage_oryx_equipment_losses() -> list[dict]:
     df = calculate_url_hash(df)
 
     records = convert_to_records(df)
-    
+
     dt = ctx.flow_run.start_time
     # Upload the records to the landing bucket.
     # Landing bucket structured like: year=YYYY/month=MM/day=DD/oryx_YYYYMMDDHH.json
     result_key: str = upload(
         records,
         f"{build_datetime_key(dt)}/oryx_{dt.year * 10000 + dt.month * 100 + dt.day}.json",
-        blocks.landing_bucket
+        storage.landing_bucket,
     )
     return result_key
