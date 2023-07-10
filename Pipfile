@@ -13,7 +13,7 @@ marshmallow = "*"
 pytest = "*"
 pandas = "*"
 tabulate = "*"
-prefecto = ">=0.0.3"
+prefecto = ">=0.0.4"
 
 [dev-packages]
 pipenv = "*"

@@ -1,11 +1,12 @@
 """
 Blocks for the Oryx pipeline.
 """
+from prefecto.filesystems import create_child
+
 from ..storage import bucket, media_bucket, persistence_bucket
-from ..utilities.blocks import create_child_bucket
 
 oryx_bucket = bucket
-landing_bucket = create_child_bucket("landing", "-landing", parent=bucket, save=True)
-assets_bucket = create_child_bucket("assets", "-assets", parent=bucket, save=True)
+landing_bucket = create_child(bucket, "landing", "-landing")
+assets_bucket = create_child(bucket, "assets", "-assets")
 persistence_bucket = persistence_bucket
 media_bucket = media_bucket

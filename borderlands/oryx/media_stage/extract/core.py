@@ -8,8 +8,8 @@ import pandas as pd
 import requests
 from prefect.tasks import exponential_backoff, task
 from prefect_aws import S3Bucket
+from prefecto.logging import get_prefect_or_default_logger
 
-from ....utilities.loggers import get_prefect_or_default_logger
 from ... import blocks
 
 

@@ -4,8 +4,8 @@ Extracts the data from the Oryx website.
 import requests
 from prefect.serializers import CompressedJSONSerializer
 from prefect.tasks import exponential_backoff, task
+from prefecto.filesystems import task_persistence_subfolder
 
-from ...utilities.blocks import task_persistence_subfolder
 from .. import blocks
 
 

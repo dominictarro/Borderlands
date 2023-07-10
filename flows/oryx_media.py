@@ -2,6 +2,7 @@
 Flow for retrieving media referenced in Oryx confirmed losses.
 """
 import datetime
+from typing import Any
 
 import pandas as pd
 from prefect import Flow, flow, task
@@ -11,6 +12,8 @@ from prefect.client.orchestration import get_client
 from prefect.engine import FlowRun
 from prefect.server.schemas.responses import DeploymentResponse
 from prefect.states import Scheduled, State
+from prefecto.concurrency import BatchTask
+from prefecto.logging import get_prefect_or_default_logger
 
 from borderlands.oryx import blocks
 from borderlands.oryx.media_stage.extract import postimg
@@ -21,8 +24,7 @@ from borderlands.oryx.media_stage.transform.basic import (
     update_with_results,
 )
 from borderlands.utilities.io_ import list_bucket, upload
-from borderlands.utilities.loggers import get_prefect_or_default_logger
-from borderlands.utilities.tasks import batch, batch_map, concat, tabulate_s3_objects
+from borderlands.utilities.tasks import concat, tabulate_s3_objects
 
 
 def create_dataframe_markdown_artifact(
@@ -43,11 +45,9 @@ def filter_for_source(df: pd.DataFrame, source: str) -> pd.DataFrame:
 
 
 @task(persist_result=False)
-def make_batches(batch_size: int, df: pd.DataFrame) -> list[dict[str, str]]:
+def column_to_list(df: pd.DataFrame, column: str) -> list[Any]:
     """Creates batches for postimg.cc."""
-    return batch(
-        batch_size, evidence_url=df["evidence_url"].to_list(), key=df["key"].to_list()
-    )
+    return df[column].to_list()
 
 
 @task(persist_result=False)
@@ -153,8 +153,10 @@ def extract_oryx_media(key: str | None = None) -> dict[str, str]:
     # Download postimg.cc
     postimg_dl_df = filter_for_source(dl_df, "postimg")
     logger.info(f"Downloading {len(postimg_dl_df)} postimg.cc images.")
-    postimg_batches = make_batches(45, postimg_dl_df)
-    postimg_keys = batch_map(postimg.extract_postimg_media, postimg_batches)
+    postimg_keys = BatchTask(postimg.extract_postimg_media, 45).map(
+        evidence_url=column_to_list(postimg_dl_df, "evidence_url"),
+        key=column_to_list(postimg_dl_df, "key"),
+    )
     df = update_with_results(df, postimg_keys)
 
     create_dataframe_markdown_artifact(
