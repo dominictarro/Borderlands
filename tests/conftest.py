@@ -5,16 +5,19 @@ import gzip
 import json
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import bs4
 import pytest
 from _pytest.fixtures import FixtureRequest, SubRequest
 from _pytest.monkeypatch import MonkeyPatch
 from prefect.testing.utilities import prefect_test_harness
-from prefect_aws import S3Bucket
+from prefect_aws import AwsCredentials, S3Bucket
 from prefecto.testing.s3 import mock_bucket
 
-from borderlands.oryx.oryx_parser.article import ArticleParser
+if TYPE_CHECKING:
+    from borderlands.oryx_parser.article import ArticleParser
+
 
 TESTS_PATH: Path = Path(__file__).parent
 EXPORT_PATH: Path = TESTS_PATH / "export"
@@ -40,22 +43,24 @@ def prefect_db():
 def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
     """Mocks the S3 buckets."""
     export_path = EXPORT_PATH / request.function.__name__
+    credentials = AwsCredentials()
+    credentials.save(name="aws-credentials-prefect", overwrite=True)
     with mock_bucket("borderlands-core", export_path=export_path):
-        core = S3Bucket(bucket_name="borderlands-core")
+        core = S3Bucket(bucket_name="borderlands-core", credentials=credentials)
         core.save(name="s3-bucket-borderlands-core", overwrite=True)
         core.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
         with mock_bucket(
             "borderlands-media", export_path=export_path, activate_moto=False
         ):
-            S3Bucket(bucket_name="borderlands-media").save(
+            S3Bucket(bucket_name="borderlands-media", credentials=credentials).save(
                 name="s3-bucket-borderlands-media", overwrite=True
             )
             with mock_bucket(
                 "borderlands-persistence", export_path=export_path, activate_moto=False
             ):
-                S3Bucket(bucket_name="borderlands-persistence").save(
-                    name="s3-bucket-borderlands-persistence", overwrite=True
-                )
+                S3Bucket(
+                    bucket_name="borderlands-persistence", credentials=credentials
+                ).save(name="s3-bucket-borderlands-persistence", overwrite=True)
                 yield
 
 
@@ -152,34 +157,38 @@ def oryx_russia_webpage(test_data_path: Path) -> bs4.Tag:
 
 
 @pytest.fixture
-def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> ArticleParser:
+def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> "ArticleParser":
     """An `ArticleParser` object."""
+    from borderlands.oryx_parser.article import ArticleParser
+
     body = oryx_ukraine_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    from borderlands.oryx.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
+    from borderlands.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
 
     yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
 
 
 @pytest.fixture
-def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> ArticleParser:
+def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> "ArticleParser":
     """An `ArticleParser` object."""
+    from borderlands.oryx_parser.article import ArticleParser
+
     body = oryx_russia_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    from borderlands.oryx.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
+    from borderlands.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
 
     yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
 
 
 @pytest.fixture
-def ukraine_page_parse_result(ukraine_article_parser: ArticleParser) -> list:
+def ukraine_page_parse_result(ukraine_article_parser: "ArticleParser") -> list:
     """The result of parsing the Ukraine page."""
     yield list(ukraine_article_parser.parse())
 
 
 @pytest.fixture
-def russia_page_parse_result(russia_article_parser: ArticleParser) -> list:
+def russia_page_parse_result(russia_article_parser: "ArticleParser") -> list:
     """The result of parsing the Russia page."""
     yield list(russia_article_parser.parse())

@@ -1,10 +1,13 @@
 """
 Tests for the article parser.
 """
-from borderlands.oryx.oryx_parser.article import ArticleParser
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from borderlands.oryx_parser.article import ArticleParser
 
 
-def test_ukraine_page_parse(ukraine_article_parser: ArticleParser):
+def test_ukraine_page_parse(ukraine_article_parser: "ArticleParser"):
     """Tests parsing the Ukraine page."""
     assert ukraine_article_parser
     result = list(ukraine_article_parser.parse())
@@ -12,7 +15,7 @@ def test_ukraine_page_parse(ukraine_article_parser: ArticleParser):
     assert all(isinstance(item, dict) for item in result)
 
 
-def test_russia_page_parse(russia_article_parser: ArticleParser):
+def test_russia_page_parse(russia_article_parser: "ArticleParser"):
     """Tests parsing the Russia page."""
     assert russia_article_parser
     result = list(russia_article_parser.parse())

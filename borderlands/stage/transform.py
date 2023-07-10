@@ -16,7 +16,7 @@ from prefect.serializers import CompressedJSONSerializer
 from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 
-from .. import blocks
+from .. import storage
 from ..oryx_parser import article
 
 
@@ -88,7 +88,7 @@ def convert_to_records(df: pd.DataFrame) -> list[dict]:
     return df.to_dict(orient="records")
 
 
-@task_persistence_subfolder(blocks.persistence_bucket)
+@task_persistence_subfolder(storage.persistence_bucket)
 @task(
     persist_result=True,
     # result_storage set by wrapper

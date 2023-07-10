@@ -6,10 +6,10 @@ from prefect.serializers import CompressedJSONSerializer
 from prefect.tasks import exponential_backoff, task
 from prefecto.filesystems import task_persistence_subfolder
 
-from .. import blocks
+from .. import storage
 
 
-@task_persistence_subfolder(blocks.persistence_bucket)
+@task_persistence_subfolder(storage.persistence_bucket)
 @task(
     tags=["www.oryxspioenkop.com", "requests"],
     retries=4,
@@ -35,7 +35,7 @@ def get_russian_equipment_loss_page() -> str:
     return r.text
 
 
-@task_persistence_subfolder(blocks.persistence_bucket)
+@task_persistence_subfolder(storage.persistence_bucket)
 @task(
     tags=["www.oryxspioenkop.com", "requests"],
     retries=4,

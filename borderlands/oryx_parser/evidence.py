@@ -7,7 +7,7 @@ import string
 import traceback
 from typing import Generator
 
-from ...utilities.misc import parse_alphabet_items
+from ..utilities.misc import parse_alphabet_items
 from .base import ParserBase
 
 
