@@ -1,29 +1,23 @@
 """
 Test the result of transforming Oryx data.
 """
+from typing import TYPE_CHECKING
+
 import pandas as pd
 import pytest
 
-from borderlands.oryx_parser.article import ArticleParser
-from borderlands.stage.transform import (
-    EvidenceSource,
-    Status,
-    assign_country_of_production,
-    assign_evidence_source,
-    assign_status,
-    flag_duplicate_natural_keys,
-    tabulate_loss_cases,
-)
+if TYPE_CHECKING:
+    from borderlands.oryx_parser.article import ArticleParser
 
 
 @pytest.fixture
-def ukraine_page_parse_result(ukraine_article_parser: ArticleParser) -> list:
+def ukraine_page_parse_result(ukraine_article_parser: "ArticleParser") -> list:
     """The result of parsing the Ukraine page."""
     yield list(ukraine_article_parser.parse())
 
 
 @pytest.fixture
-def russia_page_parse_result(russia_article_parser: ArticleParser) -> list:
+def russia_page_parse_result(russia_article_parser: "ArticleParser") -> list:
     """The result of parsing the Russia page."""
     yield list(russia_article_parser.parse())
 
@@ -32,6 +26,8 @@ def test_tabulate_loss_cases(
     ukraine_page_parse_result: list, russia_page_parse_result: list
 ):
     """Tests tabulating the loss cases."""
+    from borderlands.stage.transform import tabulate_loss_cases
+
     ukraine_data = dict(
         name="Ukraine",
         as_of_date="2023-04-24T22:46:47.590878",
@@ -62,6 +58,8 @@ def test_tabulate_loss_cases(
 
 def test_assign_status(oryx_descriptions: list[str]):
     """Tests the assign_status function."""
+    from borderlands.stage.transform import Status, assign_status
+
     df = pd.DataFrame(oryx_descriptions, columns=["description"])
     # Make sure test file is good
     assert isinstance(df, pd.DataFrame)
@@ -90,6 +88,8 @@ def test_assign_status(oryx_descriptions: list[str]):
 
 def test_assign_country_of_production(oryx_flag_urls: list, flag_url_mapper: dict):
     """Tests the assign_country_of_production function."""
+    from borderlands.stage.transform import assign_country_of_production
+
     df = pd.DataFrame(dict(country_of_production_flag_url=oryx_flag_urls))
     # Make sure test file is good
     assert isinstance(df, pd.DataFrame)
@@ -115,6 +115,8 @@ def test_assign_country_of_production(oryx_flag_urls: list, flag_url_mapper: dic
 
 def test_assign_country_of_production_log_warning(caplog, flag_url_mapper: dict):
     """Tests the assign_country_of_production function."""
+    from borderlands.stage.transform import assign_country_of_production
+
     df = pd.DataFrame(dict(country_of_production_flag_url=[r"%%%a", r"%%%b", r"%%%c"]))
     # Make sure test file is good
     df = assign_country_of_production.fn(df, flag_url_mapper)
@@ -132,6 +134,8 @@ def test_assign_country_of_production_log_warning(caplog, flag_url_mapper: dict)
 
 def test_assign_evidence_source(oryx_evidence_urls: list):
     """Tests the assign_evidence_source function."""
+    from borderlands.stage.transform import EvidenceSource, assign_evidence_source
+
     df = pd.DataFrame(dict(evidence_url=oryx_evidence_urls))
     # Make sure test file is good
     assert isinstance(df, pd.DataFrame)
@@ -157,6 +161,8 @@ def test_assign_evidence_source(oryx_evidence_urls: list):
 
 def test_assign_evidence_source_log_warning(caplog):
     """Tests the assign_evidence_source function."""
+    from borderlands.stage.transform import assign_evidence_source
+
     df = pd.DataFrame(dict(evidence_url=[r"%%%a", r"%%%b", r"%%%c"]))
     # Make sure test file is good
     df = assign_evidence_source.fn(df)
@@ -174,6 +180,8 @@ def test_assign_evidence_source_log_warning(caplog):
 
 def test_flag_duplicate_natural_keys():
     """Tests the flag_duplicate_natural_keys function."""
+    from borderlands.stage.transform import flag_duplicate_natural_keys
+
     df = pd.DataFrame(
         [
             ["Ukraine", "Aircraft", "MiG-29", "https://example.com", "12345", ""],
