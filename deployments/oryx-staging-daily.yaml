@@ -1,0 +1,89 @@
+###
+### A complete description of a Prefect Deployment for flow 'Oryx Equipment Loss Staging Flow'
+###
+name: Daily
+description: Scrapes the Oryx site for visually-confirmed equipment losses.
+version: 32b15642e49af24eb5b65a5bbf1e5c2b
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+work_pool_name: default
+tags:
+- oryx
+parameters: {}
+schedule:
+  cron: 0 12 * * *
+  timezone: America/New_York
+  day_or: true
+is_schedule_active: true
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: Oryx Equipment Loss Staging Flow
+manifest_path: null
+infrastructure:
+  type: ecs-task
+  env:
+    EXTRA_PIP_PACKAGES: beautifulsoup4 lxml marshmallow pandas prefect-github prefect-aws
+      requests tabulate
+  labels: {}
+  name: ecs-task-oryx
+  command: null
+  aws_credentials:
+    aws_access_key_id: null
+    aws_secret_access_key: null
+    aws_session_token: null
+    profile_name: null
+    region_name: null
+    aws_client_parameters:
+      api_version: null
+      use_ssl: true
+      verify: true
+      verify_cert_path: null
+      endpoint_url: null
+      config: null
+    block_type_slug: aws-credentials
+  task_definition_arn: null
+  task_definition: null
+  family: null
+  image: prefecthq/prefect:2-python3.11
+  auto_deregister_task_definition: true
+  cpu: 512
+  memory: 1024
+  execution_role_arn: arn:aws:iam::604611895840:role/prefect-agent-execution-role-borderlands-prefect
+  configure_cloudwatch_logs: true
+  cloudwatch_logs_options:
+    awslogs-stream-prefix: Oryx
+  stream_output: null
+  launch_type: FARGATE
+  vpc_id: null
+  cluster: prefect-agent-borderlands-prefect
+  task_role_arn: arn:aws:iam::604611895840:role/prefect-agent-task-role-borderlands-prefect
+  task_customizations: []
+  task_start_timeout_seconds: 120
+  task_watch_poll_interval: 5.0
+  _block_document_id: 9836986a-293d-4a51-8a54-65c9d7db375e
+  _block_document_name: ecs-task-oryx
+  _is_anonymous: false
+  block_type_slug: ecs-task
+  _block_type_slug: ecs-task
+storage:
+  repository_url: https://github.com/dominictarro/Borderlands.git
+  reference: main
+  credentials: null
+  _block_document_id: b200bbf6-125b-4a65-87d7-75786c545f83
+  _block_document_name: github-repository-borderlands
+  _is_anonymous: false
+  block_type_slug: github-repository
+  _block_type_slug: github-repository
+path: ''
+entrypoint: flows/oryx_stage.py:stage_oryx_equipment_losses
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties: {}
+  required: null
+  definitions: null
+timestamp: '2023-07-10T01:29:07.161547+00:00'
+triggers: []
