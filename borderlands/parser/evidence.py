@@ -50,6 +50,8 @@ class EvidenceParser(ParserBase):
         numbers = parse_alphabet_items(text, alphabet=string.digits)
         for id_ in set(numbers):
             try:
-                yield dict(evidence_url=self.evidence_url, description=text, id_=id_)
+                yield dict(
+                    evidence_url=self.evidence_url, description=text, id_=int(id_)
+                )
             except Exception:
                 self.logger.error(traceback.format_exc())
