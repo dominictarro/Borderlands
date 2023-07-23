@@ -3,12 +3,11 @@ Tests for the Oryx flow.
 """
 
 
-def test_stage_oryx_equipment_losses(mock_buckets, mock_oryx_page_request):
+def test_oryx_flow(mock_buckets, mock_oryx_page_request):
     """Test the Oryx equipment loss staging flow."""
-    from flows.oryx_stage import stage_oryx_equipment_losses
+    from flows.oryx import oryx_flow
 
-    stage_oryx_equipment_losses.on_completion.clear()
-    stage_oryx_equipment_losses.with_options(
+    oryx_flow.with_options(
         retries=0,
         on_completion=[],
         on_failure=[],

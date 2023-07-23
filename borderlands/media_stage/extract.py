@@ -12,7 +12,7 @@ from prefect_aws import S3Bucket
 from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 
-from .. import storage
+from .. import blocks
 from ..utilities.io_ import infer_media_extension
 from ..utilities.web import USER_AGENT
 
@@ -28,7 +28,7 @@ def upload_media(r: requests.Response, key: str, bucket: S3Bucket) -> str:
         return bucket.upload_from_file_object(fo, key)
 
 
-@task_persistence_subfolder(storage.persistence_bucket, "postimg")
+@task_persistence_subfolder(blocks.persistence_bucket, "postimg")
 @task(
     tags=["postimg.cc"],
     retries=3,
@@ -78,7 +78,7 @@ def extract_postimg_media(evidence_url: str, key: str) -> dict[str, str | None]:
     key = f"{key}{ext}"
 
     try:
-        abs_key = upload_media(r, key, storage.media_bucket)
+        abs_key = upload_media(r, key, blocks.media_bucket)
         logger.debug(f"'{evidence_url}' extracted to '{abs_key}'.")
         result["key"] = abs_key
     except Exception:
@@ -101,12 +101,12 @@ def read_staged_loss(key: str) -> pd.DataFrame:
     logger = get_prefect_or_default_logger()
     try:
         logger.info(f"Reading staged loss '{key}'.")
-        blob: bytes = storage.core_bucket.read_path(key)
+        blob: bytes = blocks.core_bucket.read_path(key)
         data = json.loads(blob)
         df = pd.DataFrame(data)
     except Exception:
         logger.error(
-            f"Failed to read staged loss '{key}' from {storage.core_bucket}.",
+            f"Failed to read staged loss '{key}' from {blocks.core_bucket}.",
             exc_info=1,
         )
         df = pd.DataFrame([])

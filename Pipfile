@@ -9,11 +9,11 @@ beautifulsoup4 = "*"
 prefect = "*"
 prefect-aws = "*"
 lxml = "*"
-marshmallow = "*"
 pytest = "*"
-pandas = "*"
 tabulate = "*"
 prefecto = ">=0.0.4"
+polars = "*"
+httpx = "*"
 
 [dev-packages]
 pipenv = "*"

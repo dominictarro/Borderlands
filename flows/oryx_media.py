@@ -15,15 +15,15 @@ from prefect.states import Scheduled, State
 from prefecto.concurrency import BatchTask
 from prefecto.logging import get_prefect_or_default_logger
 
-from borderlands import storage
+from borderlands import blocks
 from borderlands.media_stage import extract as media_extract
 from borderlands.media_stage.transform import (
     filter_for_files_that_need_download,
     join_media,
     update_with_results,
 )
-from borderlands.utilities.io_ import list_bucket, upload
-from borderlands.utilities.tasks import concat, tabulate_s3_objects
+from borderlands.utilities.io_ import list_bucket
+from borderlands.utilities.tasks import concat, tabulate_s3_objects, upload
 
 
 def create_dataframe_markdown_artifact(
@@ -105,11 +105,11 @@ def extract_oryx_media(key: str | None = None) -> dict[str, str]:
     """Flow to extract media from staged Oryx losses."""
     logger = get_prefect_or_default_logger()
     # Scan the bucket for media files.
-    media_files = list_bucket.submit(storage.media_bucket)
+    media_files = list_bucket.submit(blocks.media_bucket)
 
     if key is None:
         # Scan the bucket for unarchived loss files.
-        objects = list_bucket(storage.landing_bucket)
+        objects = list_bucket(blocks.landing_bucket)
         if len(objects) == 0:
             logger.info("No unarchived media found.")
             return
@@ -209,4 +209,4 @@ def release_latest(df: pd.DataFrame) -> str:
         ),
         data=records,
     )
-    return upload.fn(payload, "latest.json", storage.landing_bucket)
+    return upload.fn(payload, "latest.json", blocks.landing_bucket)

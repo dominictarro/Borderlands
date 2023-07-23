@@ -100,7 +100,7 @@ def series_splitter(text: str, delimiter: str = ",") -> List[str]:
 
 
 def build_datetime_key(dt: datetime.datetime, unit: str = "hour") -> str:
-    """Builds a datetime key in the format `year=YYYY/month=MM/day=DD/hour=HH/`.
+    """Builds a datetime key in the format `year=YYYY/month=MM/day=DD/hour=HH`.
     Can limit the `unit` to
 
     - `year`
@@ -137,7 +137,7 @@ def build_datetime_key(dt: datetime.datetime, unit: str = "hour") -> str:
         if p > UNIT[unit][0]:
             break
         key += f"{u}={f % getattr(dt, u)}"
-        
+
         if p < UNIT[unit][0]:
             key += "/"
     return key
