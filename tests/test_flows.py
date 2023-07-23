@@ -16,17 +16,17 @@ def test_oryx_flow(mock_buckets, mock_oryx_page_request):
     )()
 
 
-def test_extract_oryx_media(
+def test_download_media(
     mock_buckets,
     mock_oryx_page_request,
 ):
     """Test the Oryx media extraction flow."""
-    from flows.oryx_media import extract_oryx_media
+    from flows.media import download_media
 
-    extract_oryx_media.with_options(
+    download_media.with_options(
         retries=0,
         on_completion=[],
         on_failure=[],
         on_cancellation=[],
         on_crashed=[],
-    )("landing/latest.json")
+    )(loss_key="landing/year=2023/month=07/2023-07-23.parquet")

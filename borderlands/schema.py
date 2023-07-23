@@ -16,6 +16,7 @@ class Tag(enum.Enum):
     debug = "debug"
     dimension = "dimension"
     equipment = "equipment"
+    inherited = "inherited"
     media = "media"
     metadata = "metadata"
 
@@ -47,6 +48,7 @@ class Schema:
 
     def __init_subclass__(cls) -> None:
         """Adds fields to the __fields__ registry."""
+        cls.__fields__ = {}
         for k, v in cls.__dict__.items():
             if isinstance(v, Field):
                 cls.__fields__[k] = v
@@ -128,6 +130,23 @@ class EquipmentLoss(Schema):
     # Lineage/debugging
     description = Field(pl.Utf8, tags=[Tag.context, Tag.debug])
     id_ = Field(pl.Int32, tags=[Tag.context, Tag.debug])
+
+    # Metadata
+    as_of_date = Field(pl.Datetime, tags=[Tag.metadata])
+
+
+class Media(Schema):
+    """Schema for the media model."""
+
+    # Dimensions
+    url_hash: Field = Field(pl.Utf8, tags=[Tag.dimension, Tag.inherited])
+
+    # Attributes
+    url = Field(pl.Utf8, tags=[Tag.attribute, Tag.inherited])
+    evidence_source = Field(pl.Utf8, tags=[Tag.attribute, Tag.inherited])
+    media_key = Field(pl.Utf8, tags=[Tag.attribute])
+    file_type = Field(pl.Utf8, tags=[Tag.attribute])
+    media_type = Field(pl.Utf8, tags=[Tag.attribute])
 
     # Metadata
     as_of_date = Field(pl.Datetime, tags=[Tag.metadata])

@@ -18,6 +18,7 @@ from prefecto.logging import get_prefect_or_default_logger
 from prefecto.serializers.polars import PolarsSerializer
 
 from . import blocks, schema
+from .enums import EvidenceSource
 from .parser import article
 from .utilities import web, wrappers
 
@@ -77,15 +78,8 @@ STATUS_KEYWORD_MAP = {
 }
 
 
-# This will be important for establishing the media processor / page parser
-class EvidenceSource(enum.Enum):
-    """Source of the confirmation URL."""
-
-    POST_IMG = "postimg"
-    TWITTER = "twitter"
-    OTHER = "other"
-
-
+# The various URL domains in evidence URLs and the source they are associated
+# with
 DOMAIN_SOURCE_MAP = {
     "i.postimg.cc": EvidenceSource.POST_IMG.value,
     "postimg.cc": EvidenceSource.POST_IMG.value,

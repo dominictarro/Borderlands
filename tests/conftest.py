@@ -52,9 +52,9 @@ def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
         with mock_bucket(
             "borderlands-media", export_path=export_path, activate_moto=False
         ):
-            S3Bucket(bucket_name="borderlands-media", credentials=credentials).save(
-                name="s3-bucket-borderlands-media", overwrite=True
-            )
+            media = S3Bucket(bucket_name="borderlands-media", credentials=credentials)
+            media.save(name="s3-bucket-borderlands-media", overwrite=True)
+            media.upload_from_folder(test_data_path / "buckets" / "borderlands-media")
             with mock_bucket(
                 "borderlands-persistence", export_path=export_path, activate_moto=False
             ):
@@ -159,12 +159,12 @@ def oryx_russia_webpage(test_data_path: Path) -> bs4.Tag:
 @pytest.fixture
 def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> "ArticleParser":
     """An `ArticleParser` object."""
-    from borderlands.oryx_parser.article import ArticleParser
+    from borderlands.parser.article import ArticleParser
 
     body = oryx_ukraine_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    from borderlands.oryx_parser.article import UKRAINE_DATA_SECTION_INDEX
+    from borderlands.parser.article import UKRAINE_DATA_SECTION_INDEX
 
     yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
 
@@ -172,12 +172,12 @@ def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> "ArticleParser":
 @pytest.fixture
 def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> "ArticleParser":
     """An `ArticleParser` object."""
-    from borderlands.oryx_parser.article import ArticleParser
+    from borderlands.parser.article import ArticleParser
 
     body = oryx_russia_webpage.find(
         attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
     )
-    from borderlands.oryx_parser.article import RUSSIA_DATA_SECTION_INDEX
+    from borderlands.parser.article import RUSSIA_DATA_SECTION_INDEX
 
     yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
 
