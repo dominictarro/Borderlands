@@ -6,12 +6,13 @@ from __future__ import annotations
 import json
 from typing import Dict
 
+import polars as pl
 from prefect import task
 
 from . import blocks
 
 
-def get_asset(asset_name: str) -> str:
+def get_asset(asset_name: str) -> bytes:
     """Gets the asset from the assets folder.
 
     Parameters
@@ -21,7 +22,7 @@ def get_asset(asset_name: str) -> str:
 
     Returns
     -------
-    str
+    bytes
         Asset
     """
     return blocks.assets_bucket.read_path(asset_name)
@@ -47,3 +48,16 @@ def get_country_of_production_url_mapper() -> Dict[str, str]:
     data = get_asset("country_of_production_url_mapping.json")
     mapper: dict = json.loads(data)
     return {url: lookup["Alpha-3"] for url, lookup in mapper.items()}
+
+
+@task
+def get_category_corrections() -> pl.DataFrame:
+    """Gets the category corrections from the assets folder.
+
+    Returns
+    -------
+    pl.DataFrame
+        DataFrame of category corrections
+    """
+    data = get_asset("category_corrections.csv")
+    return pl.read_csv(data)

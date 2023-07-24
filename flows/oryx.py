@@ -66,13 +66,22 @@ def oryx_flow() -> str:
     ukrainian_page = get_oryx_page.submit(
         "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html"
     )
+    naval_page = get_oryx_page.submit(
+        "https://www.oryxspioenkop.com/2022/03/list-of-naval-losses-during-2022.html"
+    )
+    aircraft_page = get_oryx_page.submit(
+        "https://www.oryxspioenkop.com/2022/03/list-of-aircraft-losses-during-2022.html"
+    )
     mapper = assets.get_country_of_production_url_mapper.submit()
+    category_corrections = assets.get_category_corrections.submit()
     df = tasks.concat(
         [
             parse_oryx_web_page(russian_page, "Russia"),
             parse_oryx_web_page(ukrainian_page, "Ukraine"),
+            parse_oryx_web_page(naval_page, None),
+            parse_oryx_web_page(aircraft_page, None),
         ]
     )
-    df = pre_process_dataframe(df, mapper, dt)
+    df = pre_process_dataframe(df, mapper, category_corrections, dt)
 
     return upload(df, dt)

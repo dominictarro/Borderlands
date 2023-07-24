@@ -19,7 +19,7 @@ from prefecto.serializers.polars import PolarsSerializer
 
 from . import blocks, schema
 from .enums import EvidenceSource
-from .parser import article
+from .parser import article, parser
 from .utilities import web, wrappers
 
 
@@ -93,7 +93,7 @@ DOMAIN_SOURCE_MAP = {
 
 
 @task
-def parse_oryx_web_page(page: str, country: str) -> pl.DataFrame:
+def parse_oryx_web_page(page: str, country: str | None = None) -> pl.DataFrame:
     """Parses the Oryx web page.
 
     Parameters
@@ -111,27 +111,28 @@ def parse_oryx_web_page(page: str, country: str) -> pl.DataFrame:
     logger = get_prefect_or_default_logger()
     # Russian and Ukrainian pages are largely identical with the exception of
     # the data section's positions
-    data_section_index: int
+    data_section_index: int | None = None
     if country == "Russia":
         data_section_index = article.RUSSIA_DATA_SECTION_INDEX
     elif country == "Ukraine":
         data_section_index = article.UKRAINE_DATA_SECTION_INDEX
+    elif country is None:
+        pass
     else:
         raise ValueError(f"There is no equipment losses parser for '{country!r}'")
 
     soup: bs4.BeautifulSoup = bs4.BeautifulSoup(page, features="html.parser")
-    body = soup.find(
-        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
+    generator = parser.OryxParser(soup, multi=country is None, logger=logger).parse(
+        data_section_index
     )
-    parser = article.ArticleParser(body, data_section_index, logger)
-
-    df = pl.from_dicts(parser.parse(), schema=schema.EquipmentLoss.schema())
+    df = pl.from_dicts(generator, schema=schema.EquipmentLoss.schema())
     logger.info(f"Found {len(df)} equipment losses for {country}")
 
-    # Complete the country column
-    df = df.with_columns(
-        pl.lit(country).alias(schema.EquipmentLoss.country.name),
-    )
+    if country is not None:
+        # Complete the country column
+        df = df.with_columns(
+            pl.lit(country).alias(schema.EquipmentLoss.country.name),
+        )
     return df
 
 
@@ -237,6 +238,83 @@ def calculate_url_hash(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFr
 
 @wrappers.force_lazyframe
 @wrappers.inject_default_logger
+def resolve_aircraft_and_naval_page_updates(
+    lf: pl.LazyFrame, lookup: pl.LazyFrame, *, logger: logging.Logger
+) -> pl.LazyFrame:
+    """Removes losses from the old 'Aircraft' and 'Naval Ships' sections. These were
+    replaced by the 'List of Naval Losses' and 'List of Aircraft Losses' pages.
+
+    Requires:
+    - `schema.EquipmentLoss.country`
+    - `schema.EquipmentLoss.category`
+    - `schema.EquipmentLoss.model`
+    - `schema.EquipmentLoss.url_hash`
+    """
+    """Removes aircraft and naval losses that exist on the new pages."""
+    agg = (
+        lf.groupby(
+            schema.EquipmentLoss.country.name,
+            schema.EquipmentLoss.model.name,
+            schema.EquipmentLoss.url_hash.name,
+        )
+        .agg(pl.col(schema.EquipmentLoss.category.name).unique().alias("categories"))
+        .with_columns(
+            (
+                pl.col("categories").list.contains(pl.lit("Aircraft"))
+                | pl.col("categories").list.contains(pl.lit("Naval Ships"))
+            ).alias("from_original"),
+            pl.col("categories").list.lengths().alias("pages_shared_on"),
+        )
+    )
+
+    # Exclude old losses that were added to the new pages
+    # Find the losses that were added to the new pages
+    to_replace = agg.filter(pl.col("from_original") & (pl.col("pages_shared_on") > 1))
+    # Add a marker column
+    to_replace = to_replace.with_columns(pl.lit(1).alias("to_replace"))
+    lf = lf.join(
+        to_replace,
+        on=[
+            schema.EquipmentLoss.country.name,
+            schema.EquipmentLoss.model.name,
+            schema.EquipmentLoss.url_hash.name,
+        ],
+        how="left",
+    ).filter(
+        # Filters for cases that are not in the to_replace table or, if they are,
+        # are not the old aircraft or naval category
+        pl.col("to_replace").is_null()
+        | (
+            pl.col("to_replace").is_not_null()
+            & pl.col(schema.EquipmentLoss.category.name)
+            .is_in(["Aircraft", "Naval Ships"])
+            .is_not()
+        )
+    )
+
+    lf = (
+        lf.join(
+            lookup,
+            left_on=[
+                schema.EquipmentLoss.category.name,
+                schema.EquipmentLoss.model.name,
+            ],
+            right_on=["old_category", "model"],
+            how="left",
+        )
+        .with_columns(
+            pl.when(pl.col("new_category").is_not_null())
+            .then(pl.col("new_category"))
+            .otherwise(pl.col("category"))
+            .alias(schema.EquipmentLoss.category.name),
+        )
+        .drop("new_category")
+    )
+    return lf
+
+
+@wrappers.force_lazyframe
+@wrappers.inject_default_logger
 def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
     """Calculates the case ID for each case. The case ID helps discriminate
     situations where multiple assets are identified in the same evidence.
@@ -283,7 +361,10 @@ def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFra
     persist_result=True,
 )
 def pre_process_dataframe(
-    df: pl.DataFrame, country_url_mapper: dict[str, str], as_of_date: datetime.datetime
+    df: pl.DataFrame,
+    country_url_mapper: dict[str, str],
+    category_corrections: pl.DataFrame,
+    as_of_date: datetime.datetime,
 ) -> pl.DataFrame:
     """Performs basic preprocessing on the DataFrame.
 
@@ -293,6 +374,8 @@ def pre_process_dataframe(
         The DataFrame to clean.
     country_url_mapper : dict[str, str]
         A dictionary mapping country flag URLs to their unique identifier.
+    category_corrections : pl.DataFrame
+        A DataFrame mapping old categories to new categories.
     as_of_date : datetime.datetime
         The date the data was collected.
 
@@ -336,6 +419,7 @@ def pre_process_dataframe(
             .pipe(assign_country_of_production, country_url_mapper)
             .pipe(assign_evidence_source)
             .pipe(calculate_url_hash)
+            .pipe(resolve_aircraft_and_naval_page_updates, category_corrections.lazy())
             .pipe(calculate_case_id)
         )
         .collect()
