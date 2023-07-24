@@ -1,0 +1,13 @@
+model,old_category,new_category
+Su-34 strike aircraft,Aircraft,Combat Aircraft
+Su-25 close air support aircraft,Aircraft,Combat Aircraft
+Su-35S multirole aircraft,Aircraft,Combat Aircraft
+Project 02510 BK-16E high-speed assault boat,Naval Ships,Patrol Boats
+Project 1171 Tapir-class landing ship 'Saratov (BDK-65)',Naval Ships,Landing Ships
+Unknown patrol boat (Sea Guard),Naval Ships,Miscellaneous Vessels
+Island-class patrol boat P190 Slovyansk,Naval Ships,Patrol and Gunboats
+Su-27 multirole aircraft,Aircraft,Combat Aircraft
+Il-22 airborne command post,Aircraft,Command And Control Aircraft
+Project 03160 Raptor-class patrol boat,Naval Ships,Patrol Boats
+Il-76 transport aircraft,Aircraft,Transport Aircraft
+MiG-29 fighter aircraft,Aircraft,Combat Aircraft
