@@ -45,7 +45,6 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
     # seconds
     timeout_seconds=600,
     log_prints=True,
-    # on_completion=[oryx_media.trigger_extract_oryx_media],
 )
 def oryx_flow() -> str:
     """Flow to retrieve the web pages of Russian and Ukrainian equipment

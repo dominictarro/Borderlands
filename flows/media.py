@@ -55,6 +55,8 @@ def download_oryx(path: str) -> pl.DataFrame:
 
 @flow(
     name="Media Download",
+    description="Flow to download new media from the Oryx dataset.",
+    timeout_seconds=600,
 )
 def download_media(loss_key: str) -> str:
     """Download the media from the media bucket."""
