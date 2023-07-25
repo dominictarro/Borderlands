@@ -1,14 +1,29 @@
 """
 Flow to orchestrate the Oryx subflows.
 """
-from prefect import flow
-from prefecto.logging import get_prefect_or_default_logger
+from prefect import flow, task
+from prefect_aws import S3Bucket
 
 try:
     import media
     import oryx
 except ImportError:
     from flows import media, oryx
+
+from borderlands import blocks, datasets
+
+
+@task(log_prints=True)
+def release_dataset(path: str, dataset: datasets.Dataset) -> str:
+    """Release the dataset to the bucket."""
+    src_bucket = S3Bucket.load(dataset.host_bucket)
+    path = blocks.core_bucket.stream_from(
+        src_bucket,
+        path,
+        dataset.release_path,
+    )
+    print(f"Released {dataset.label} to {dataset.release_path}")
+    return path
 
 
 @flow(
@@ -17,8 +32,14 @@ except ImportError:
 )
 def borderlands_flow():
     """Flow to orchestrate the Oryx subflows."""
-    logger = get_prefect_or_default_logger()
     oryx_key = oryx.oryx_flow()
-    logger.info(f"Oryx key: {oryx_key}")
-    media_key = media.download_media(oryx_key)
-    logger.info(f"Media key: {media_key}")
+    oryx_release = release_dataset.submit(
+        oryx_key,
+        datasets.oryx,
+    )
+
+    media_key = media.download_media(oryx_release)
+    oryx_release = release_dataset.submit(
+        media_key,
+        datasets.oryx,
+    )

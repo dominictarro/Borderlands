@@ -52,9 +52,9 @@ def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
         with mock_bucket(
             "borderlands-media", export_path=export_path, activate_moto=False
         ):
-            media = S3Bucket(bucket_name="borderlands-media", credentials=credentials)
-            media.save(name="s3-bucket-borderlands-media", overwrite=True)
-            media.upload_from_folder(test_data_path / "buckets" / "borderlands-media")
+            S3Bucket(bucket_name="borderlands-media", credentials=credentials).save(
+                name="s3-bucket-borderlands-media", overwrite=True
+            )
             with mock_bucket(
                 "borderlands-persistence", export_path=export_path, activate_moto=False
             ):
