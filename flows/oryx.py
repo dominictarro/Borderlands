@@ -32,7 +32,7 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)
         blob = buffer.read()
-    return tasks.upload.fn(content=blob, key=key, bucket=blocks.landing_bucket)
+    return tasks.upload.fn(content=blob, key=key, bucket=blocks.oryx_bucket)
 
 
 @flow(
@@ -45,7 +45,6 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
     # seconds
     timeout_seconds=600,
     log_prints=True,
-    # on_completion=[oryx_media.trigger_extract_oryx_media],
 )
 def oryx_flow() -> str:
     """Flow to retrieve the web pages of Russian and Ukrainian equipment

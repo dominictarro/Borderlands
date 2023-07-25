@@ -18,12 +18,10 @@ oryx_ecs_task: ECSTask = ECSTask(
             (
                 "beautifulsoup4",
                 "lxml",
-                "marshmallow",
-                "pandas",
+                "polars",
                 "prefect-github",
                 "prefect-aws",
-                "requests",
-                "tabulate",
+                "httpx",
             )
         ),
     },

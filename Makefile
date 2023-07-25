@@ -12,10 +12,10 @@ tests: tests/ tests/**/test_*.py
 	pytest -v tests/
 
 # Deployment of flows
-make-deployments: flows/oryx_stage.py flows/oryx_media.py deployments/
-	prefect deployments build flows/oryx_stage.py:stage_oryx_equipment_losses \
+make-deployments: flows/orchestrator.py flows/media.py flows/oryx.py deployments/
+	prefect deployments build flows/orchestrator.py:borderlands_flow \
 		--name Daily \
-		--description "Scrapes the Oryx site for visually-confirmed equipment losses." \
+		--description "Orchestrates the Oryx pipeline execution and dataset releases." \
 		--infra-block ecs-task/ecs-task-oryx \
 		--storage-block github-repository/github-repository-borderlands \
 		--cron "0 12 * * *" \
@@ -23,19 +23,7 @@ make-deployments: flows/oryx_stage.py flows/oryx_media.py deployments/
 		--tag "oryx" \
 		--work-queue "default" \
 		--skip-upload \
-		--output "deployments/oryx-staging-daily.yaml"
-
-	prefect deployments build flows/oryx_media.py:extract_oryx_media \
-		--name Trigger \
-		--description "Downloads images to the media bucket if they haven't been already." \
-		--infra-block ecs-task/ecs-task-oryx \
-		--storage-block github-repository/github-repository-borderlands \
-		--tag "oryx" \
-		--tag "trigger" \
-		--work-queue "default" \
-		--skip-upload \
-		--output "deployments/oryx-media-trigger.yaml"
-upload-deployments: deployments/oryx-staging-daily.yaml deployments/oryx-media-trigger.yaml
-	prefect deployments apply deployments/oryx-staging-daily.yaml
-	prefect deployments apply deployments/oryx-media-trigger.yaml
+		--output "deployments/orchestrator-daily.yaml"
+upload-deployments: deployments/orchestrator-daily.yaml
+	prefect deployments apply deployments/orchestrator-daily.yaml
 deployments-workflow: make-deployments upload-deployments

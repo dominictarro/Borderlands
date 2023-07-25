@@ -29,4 +29,4 @@ def test_download_media(
         on_failure=[],
         on_cancellation=[],
         on_crashed=[],
-    )(loss_key="landing/year=2023/month=07/2023-07-23.parquet")
+    )(loss_key="oryx/year=2023/month=07/2023-07-23.parquet")

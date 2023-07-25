@@ -11,9 +11,10 @@ import anyio
 import httpx
 import polars as pl
 from prefect import task
+from prefect_aws import S3Bucket
 from prefecto.logging import get_prefect_or_default_logger
 
-from . import blocks, enums, paths, schema
+from . import blocks, datasets, enums, paths, schema
 from .utilities import io_, web
 
 INVENTORY_SUBFOLDER = "inventory"
@@ -93,9 +94,11 @@ def get_latest_media_inventory() -> pl.DataFrame:
     Returns:
         pl.DataFrame: The media inventory.
     """
-    key = blocks.media_bucket.list_objects(INVENTORY_SUBFOLDER + "/")[-1]["Key"]
+    bucket: S3Bucket = S3Bucket.load(datasets.media_inventory.host_bucket)
     with io.BytesIO() as buffer:
-        blocks.media_bucket.download_object_to_file_object(key, buffer)
+        bucket.download_object_to_file_object(
+            datasets.media_inventory.release_path, buffer
+        )
         buffer.seek(0)
         return pl.read_parquet(buffer)
 
