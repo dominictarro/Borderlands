@@ -16,7 +16,7 @@ from prefect_aws import AwsCredentials, S3Bucket
 from prefecto.testing.s3 import mock_bucket
 
 if TYPE_CHECKING:
-    from borderlands.oryx_parser.article import ArticleParser
+    from borderlands.parser.article import ArticleParser
 
 
 TESTS_PATH: Path = Path(__file__).parent
