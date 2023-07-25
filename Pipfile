@@ -4,15 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
 beautifulsoup4 = "*"
 prefect = "*"
 prefect-aws = "*"
 lxml = "*"
-marshmallow = "*"
-pytest = "*"
-pandas = "*"
-tabulate = "*"
+prefecto = ">=0.0.4"
+polars = "*"
+httpx = "*"
 
 [dev-packages]
 pipenv = "*"
@@ -24,6 +22,10 @@ commitizen = "*"
 prefect-github = "*"
 pygit2 = "*"
 python-dotenv = "*"
+moto = ">=3.1.16"
+prefecto = {extras = ["moto"], version = ">=0.0.3"}
+prefect = {version = ">=0.0.3", extras = ["mock"]}
+pytest = "*"
 
 [requires]
 python_version = "3.11"

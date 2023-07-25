@@ -1,98 +1,18 @@
 """
 Generic tasks for the Borderlands project.
 """
-from typing import Any
+import json
+import sys
+from io import BufferedIOBase, TextIOBase
+from pathlib import Path
+from typing import IO, Any
 
-import pandas as pd
-from prefect import states, task
-from prefect.futures import PrefectFuture
-from prefect.tasks import Task
+import polars as pl
+from prefect import task
+from prefect_aws import S3Bucket
+from prefecto.logging import get_prefect_or_default_logger
 
-from ..utilities.loggers import get_prefect_or_default_logger
-
-concat = task(pd.concat)
-
-
-def batch(batch_size: int, **kwds) -> list[dict[str, Any]]:
-    """Break the keyword iterables into batches of a given size.
-
-    >>> batch(2, a=[1,2,3,4,5], b=[2,3,4,5,6])
-    [
-        {"a": [1,2], "b": [2,3]},
-        {"a": [3,4], "b": [4,5]},
-        {"a": [5], "b": [6]}
-    ]
-    """
-    parameters = sorted(kwds.keys())
-    if len(parameters) == 0:
-        raise ValueError("Must provide at least one iterable.")
-
-    # Validate all are iterables
-    for k in parameters:
-        if not hasattr(kwds[k], "__iter__"):
-            raise ValueError(f"Expected '{k}' to be an iterable.")
-
-    length = len(kwds[parameters[0]])
-
-    # Validate all of equal length
-    if len(parameters) > 1:
-        for k in parameters[1:]:
-            if not len(kwds[k]) == length:
-                raise ValueError(
-                    f"Expected all iterables to be of length {length} like '{parameters[0]}'. '{k}' is length {len(kwds[k])}."
-                )
-
-    batches = []
-    current_batch = {p: [] for p in parameters}
-
-    i = 0
-    for i in range(length):
-        for p in parameters:
-            current_batch[p].append(kwds[p][i])
-
-        if (i + 1) % batch_size == 0:
-            batches.append(current_batch)
-            current_batch = {p: [] for p in parameters}
-
-    if (i + 1) % batch_size != 0:
-        # Final update
-        batches.append(current_batch)
-
-    return batches
-
-
-def batch_map(task: Task, batches: list[dict[str, Any]]) -> list[Any]:
-    """Execute a task for each batch in batches."""
-    logger = get_prefect_or_default_logger()
-    results = []
-    for i, b in enumerate(batches):
-        logger.info(f"{task.name} | Starting batch {i+1} of {len(batches)}.")
-        futures = task.map(**b)
-        results.append(futures)
-
-        # Poll futures to ensure they are not active.
-        is_complete: bool = False
-        while not is_complete:
-            logger.info(f"{task.name} | Polling futures...")
-            is_complete = True
-            for f in futures:
-                f: PrefectFuture
-                if f.get_state() in (
-                    states.Running,
-                    states.Pending,
-                    states.Retrying,
-                    states.AwaitingRetry,
-                ):
-                    is_complete = False
-                    break
-            else:
-                break
-            # Quick and dirty way to sleep without blocking the event loop.
-            f.wait(0.25)
-
-        logger.info(f"{task.name} | Batch {i+1} of {len(batches)} complete.")
-
-    return depaginate(results)
+concat = task(pl.concat, tags=["polars"])
 
 
 @task
@@ -102,7 +22,7 @@ def depaginate(pages: list[list[Any]]) -> list[Any]:
 
 
 @task
-def tabulate_s3_objects(objects: list[dict[str, Any]]) -> pd.DataFrame:
+def tabulate_s3_objects(objects: list[dict[str, Any]]) -> pl.DataFrame:
     """Converts a list of S3 objects into a DataFrame.
 
     S3 objects are dictionaries like
@@ -117,8 +37,53 @@ def tabulate_s3_objects(objects: list[dict[str, Any]]) -> pd.DataFrame:
     }
     ```
     """
-    df = pd.DataFrame(
-        objects,
-        columns=["Key", "LastModified", "ETag", "Size", "StorageClass"],
-    )
-    return df
+    return pl.from_dicts(objects)
+
+
+@task
+def upload(
+    content: bytes | IO | Path | str | Any, key: str, bucket: S3Bucket, **kwds
+) -> str:
+    """Uploads the `content` under `key` to the given `bucket.`
+
+    :param content: Object with a supported `S3Bucket` write method. Write\
+        methods include:
+
+        - `write_path` (`bytes`, `str`, or JSON-encoded object)
+        - `upload_from_file_object` (IO object with `read`)
+        - `upload_from_folder` (`Path` that points to a directory)
+        - `upload_from_path` (`Path` that points to a non-directory)
+
+    :param key:         Key to write `content` to
+    :param bucket:      Bucket to write to
+    :param cls:         `JSONEncoder` to encode non-byte/string/IO object with
+    :param encoding:    `str.encode` encoding argument. Defaults to system
+    :param error:       `str.encode` error argument. Defaults to 'strict'
+    :return:            Full key the content was written to
+    """
+    logger = get_prefect_or_default_logger()
+    if isinstance(content, bytes):
+        logger.info("Uploading %s bytes to '%s'", len(content), key)
+        # Bytes
+        path = bucket.write_path(key, content)
+    elif issubclass(content.__class__, (BufferedIOBase, TextIOBase)):
+        # File object
+        path = bucket.upload_from_file_object(content, key, **kwds)
+    elif isinstance(content, Path):
+        # File or folder
+        if content.is_dir():
+            path = bucket.upload_from_folder(content, key, **kwds)
+        else:
+            path = bucket.upload_from_path(content, key, **kwds)
+    elif isinstance(content, str):
+        # String
+        encoding = kwds.get("encoding", sys.getdefaultencoding())
+        errors = kwds.get("errors", "strict")
+        content = content.encode(encoding, errors)
+        path = upload.fn(content, key, bucket, **kwds)
+    else:
+        # JSON
+        encoder = kwds.get("cls", json.JSONEncoder())
+        content = encoder.encode(content)
+        path = upload.fn(content, key, bucket, **kwds)
+    return path

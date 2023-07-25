@@ -1,3 +1,6 @@
+# Over my dead body
+.DS_Store
+
 # Local virtual environment
 Pipfile.lock
 
@@ -9,7 +12,7 @@ terraform.tfvars
 *.tfstate*
 
 # Test output
-tests/output/
+tests/export/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
