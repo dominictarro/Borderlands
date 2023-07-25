@@ -41,11 +41,6 @@ borderlands_persistence = S3Bucket(
     credentials=aws_credentials,
 )
 
-borderlands_media = S3Bucket(
-    _block_document_name="s3-bucket-borderlands-media",
-    bucket_name=tf.MEDIA_BUCKET_NAME,
-    credentials=aws_credentials,
-)
 
 if __name__ == "__main__":
     import asyncio
@@ -65,7 +60,6 @@ if __name__ == "__main__":
                 dependencies=[
                     save(borderlands_core),
                     save(borderlands_persistence),
-                    save(borderlands_media),
                 ],
             ),
             save(borderlands_github),

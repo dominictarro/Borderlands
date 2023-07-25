@@ -32,7 +32,7 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)
         blob = buffer.read()
-    return tasks.upload.fn(content=blob, key=key, bucket=blocks.landing_bucket)
+    return tasks.upload.fn(content=blob, key=key, bucket=blocks.oryx_bucket)
 
 
 @flow(

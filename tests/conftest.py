@@ -50,18 +50,12 @@ def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
         core.save(name="s3-bucket-borderlands-core", overwrite=True)
         core.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
         with mock_bucket(
-            "borderlands-media", export_path=export_path, activate_moto=False
+            "borderlands-persistence", export_path=export_path, activate_moto=False
         ):
-            S3Bucket(bucket_name="borderlands-media", credentials=credentials).save(
-                name="s3-bucket-borderlands-media", overwrite=True
-            )
-            with mock_bucket(
-                "borderlands-persistence", export_path=export_path, activate_moto=False
-            ):
-                S3Bucket(
-                    bucket_name="borderlands-persistence", credentials=credentials
-                ).save(name="s3-bucket-borderlands-persistence", overwrite=True)
-                yield
+            S3Bucket(
+                bucket_name="borderlands-persistence", credentials=credentials
+            ).save(name="s3-bucket-borderlands-persistence", overwrite=True)
+            yield
 
 
 @pytest.fixture

@@ -34,72 +34,10 @@ Core datasets and releases bucket.
 
 variable "s3_bucket_core" {
     type = string
-    description = "Name of the S3 bucket to store core files."
+    description = "Name of the S3 bucket to store Borderlands files."
     default = "borderlands-core"
-}
-
-variable "oryx_latest_release_key" {
-    type = string
-    description = "Key for the latest release file."
-    default = "oryx/landing/latest.json"
 }
 
 resource "aws_s3_bucket" "core_bucket" {
     bucket = var.s3_bucket_core
-}
-
-# Make public access possible
-resource "aws_s3_bucket_public_access_block" "core_bucket" {
-    bucket = aws_s3_bucket.core_bucket.id
-
-    block_public_acls       = true
-    block_public_policy     = false
-    ignore_public_acls      = true
-    restrict_public_buckets = false
-}
-
-# Restrict public access to read/list only
-resource "aws_s3_bucket_policy" "core_bucket" {
-    bucket = aws_s3_bucket.core_bucket.id
-    policy = data.aws_iam_policy_document.core_bucket.json
-}
-
-
-data "aws_iam_policy_document" "core_bucket" {
-    statement {
-        principals {
-            type = "*"
-            identifiers = ["*"]
-        }
-
-        actions = [
-            "s3:GetObject",
-            "s3:ListBucket",
-        ]
-
-        resources = [
-            aws_s3_bucket.core_bucket.arn,
-            "${aws_s3_bucket.core_bucket.arn}/*",
-        ]
-    }
-}
-
-
-/*
-Oryx media bucket.
-*/
-
-variable "s3_bucket_media" {
-    type = string
-    description = "Name of the S3 bucket to store media files."
-    default = "borderlands-media"
-}
-
-resource "aws_s3_bucket" "media_bucket" {
-    bucket = var.s3_bucket_media
-}
-
-resource "aws_s3_bucket_request_payment_configuration" "media_bucket" {
-    bucket = aws_s3_bucket.media_bucket.id
-    payer  = "Requester"
 }
