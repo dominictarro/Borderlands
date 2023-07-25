@@ -21,6 +21,7 @@ oryx_ecs_task: ECSTask = ECSTask(
                 "polars",
                 "prefect-github",
                 "prefect-aws",
+                "prefecto",
                 "httpx",
             )
         ),
