@@ -4,6 +4,7 @@
 import datetime
 import functools
 import io
+import logging
 import tempfile
 from typing import Callable, Coroutine
 
@@ -15,7 +16,7 @@ from prefect_aws import S3Bucket
 from prefecto.logging import get_prefect_or_default_logger
 
 from . import blocks, datasets, enums, paths, schema
-from .utilities import io_, web
+from .utilities import io_, web, wrappers
 
 INVENTORY_SUBFOLDER = "inventory"
 
@@ -246,12 +247,17 @@ def evidence_source_handler(
         """Wrap the coroutine in a handler for the evidence source."""
 
         @functools.wraps(coro)
+        @wrappers.inject_default_logger
         async def wrapper(
-            df: pl.DataFrame, results: dict[str, pl.DataFrame], *args, **kwargs
+            df: pl.DataFrame,
+            results: dict[str, pl.DataFrame],
+            *args,
+            logger: logging.Logger,
+            **kwargs,
         ):
             """Performs pre and post processing for the handler."""
             logger = get_prefect_or_default_logger()
-            logger.info(f"Downloading {evidence_source.value} media")
+            logger.info(f"Searching for {evidence_source.value} media to download")
 
             df = df.filter(
                 pl.col(schema.Media.evidence_source.name) == evidence_source.value
@@ -261,6 +267,9 @@ def evidence_source_handler(
             if not_downloaded.shape[0] == 0:
                 logger.info(f"No {evidence_source.value} media to download")
                 return downloaded
+            logger.info(
+                f"Downloading {not_downloaded.shape[0]} {evidence_source.value} media files"
+            )
 
             # Convert to dicts for async processing
             contexts: list[dict[str, str]] = not_downloaded.to_dicts()
