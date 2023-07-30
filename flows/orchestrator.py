@@ -41,5 +41,5 @@ def borderlands_flow():
     media_key = media.download_media(oryx_release)
     oryx_release = release_dataset.submit(
         media_key,
-        datasets.oryx,
+        datasets.media_inventory,
     )
