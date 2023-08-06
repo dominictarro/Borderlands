@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .dataset import Dataset
     from .fields import Field
+    from .schema import FieldFilter
 
 
 class Formatter:
@@ -23,11 +24,15 @@ class Formatter:
         self.level = level
         assert self.level in range(1, 5), "Level must be between in range [1, 4]."
 
-    def __call__(self) -> str:
+    def format(
+        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
+    ) -> str:
         """Formats the schema into markdown.
 
         Args:
             schema (Schema): The schema to format.
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             str: The formatted schema.
@@ -36,7 +41,7 @@ class Formatter:
             [
                 self._format_header(),
                 self._format_description(),
-                self._format_schema(),
+                self._format_schema(include, exclude),
             ]
         )
 
@@ -62,22 +67,34 @@ class Formatter:
         """
         return self.dataset.description
 
-    def _format_schema(self) -> str:
+    def _format_schema(
+        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
+    ) -> str:
         """Formats the schema.
 
         Args:
             schema (Schema): The schema to format.
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             str: The formatted schema.
         """
-        return f"{'#' * (self.level + 1)} Schema" + "\n\n" + self._format_fields()
+        return (
+            f"{'#' * (self.level + 1)} Schema"
+            + "\n\n"
+            + self._format_fields(include=include, exclude=exclude)
+        )
 
-    def _format_fields(self) -> str:
+    def _format_fields(
+        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
+    ) -> str:
         """Formats the fields of the schema.
 
         Args:
             schema (Schema): The schema to format.
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             str: The formatted fields.
@@ -85,7 +102,12 @@ class Formatter:
         return (
             self._create_field_header()
             + "\n"
-            + "\n".join([self._format_field(f) for f in self.dataset.schema.iter()])
+            + "\n".join(
+                [
+                    self._format_field(f)
+                    for f in self.dataset.schema.iter(include=include, exclude=exclude)
+                ]
+            )
         )
 
     def _create_field_header(self) -> str:

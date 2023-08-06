@@ -37,8 +37,8 @@ class Schema:
         """Iterates over the fields of the schema and yields the name and field object. Filters fields based on the `include` and `exclude` parameters.
 
         Args:
-            include (FieldFilter, optional): A list of tags to include. Defaults to None (no inclusion requirement).
-            exclude (FieldFilter, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Yields:
             Iterator[tuple[str, Field]]: A tuple of the field name and field object.
@@ -65,8 +65,8 @@ class Schema:
         """Returns a dictionary schema for Polars.
 
         Args:
-            include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
-            exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             dict[str, pl.DataType]: A dictionary of the field names and their data types.

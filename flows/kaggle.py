@@ -120,12 +120,21 @@ def staged_datasets_as_json(metadata: dict):
         metadata (dict): The dataset metadata.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
+        metadata["description"] = (
+            metadata["description"].rstrip("\n")
+            + "\n\n## Catalog"
+            + "\n\nDocumentation of data in this release."
+        )
+
+        # Add the datasets and add their documentation to the description
+        ORYX_EXCLUDE = [Tag.metadata, Tag.debug]
+        stage_dataset_as_json(oryx, tmpdir, exclude=ORYX_EXCLUDE)
+        metadata["description"] += "\n\n" + oryx.to_markdown(exclude=ORYX_EXCLUDE)
+
         # Add the metadata file
         with open(Path(tmpdir) / "dataset-metadata.json", "w") as f:
             json.dump(metadata, f, indent=4)
 
-        # Add the datasets
-        stage_dataset_as_json(oryx, tmpdir, exclude=[Tag.metadata, Tag.debug])
         try:
             yield tmpdir
         finally:
@@ -161,7 +170,7 @@ def update_kaggle_dataset(api: KaggleApi, metadata: dict, date: datetime.date):
             tmpdir,
             version_notes=f"{date.strftime(r'%Y-%m-%d')} Release",
             quiet=False,
-            delete_old_versions=False,
+            delete_old_versions=True,
         )
 
 

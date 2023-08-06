@@ -9,8 +9,7 @@ import polars as pl
 
 from .. import blocks
 from .formatter import Formatter
-from .schema import Schema
-from .tags import TagSet
+from .schema import FieldFilter, Schema
 
 
 @dc.dataclass
@@ -32,13 +31,13 @@ class Dataset:
     description: str = dc.field(default_factory=str)
 
     def read(
-        self, include: TagSet | None = None, exclude: TagSet | None = None
+        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
     ) -> pl.DataFrame:
         """Read the dataset's latest release.
 
         Args:
-            include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
-            exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             pl.DataFrame: The dataset's latest release.
@@ -48,13 +47,21 @@ class Dataset:
             f.seek(0)
             return pl.read_parquet(f).select(self.schema.columns(include, exclude))
 
-    def to_markdown(self, level: int = 2) -> str:
+    def to_markdown(
+        self,
+        level: int = 2,
+        include: FieldFilter | None = None,
+        exclude: FieldFilter | None = None,
+    ) -> str:
         """Formats the dataset into markdown.
 
         Args:
             level (int, optional): The header level of the documentation. Defaults to 2.
+            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
+            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             str: The dataset described in markdown.
         """
-        return Formatter(self, level)()
+        f = Formatter(self, level)
+        return f.format(include=include, exclude=exclude)

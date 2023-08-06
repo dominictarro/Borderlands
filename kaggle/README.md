@@ -5,10 +5,3 @@
 The *Borderlands* project is a public collection of high-granularity datasets related to the Russo-Ukrainian War.
 
 This data is updated **daily** and is available for free to the public.
-
-## Catalog
-
-| Dataset | Description |
-| --- | --- |
-| Oryx | Visually-confirmed equipment losses. |
-| Media | Images of equipment losses found in Oryx. |
