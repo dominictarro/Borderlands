@@ -8,6 +8,7 @@ import io
 import polars as pl
 
 from .. import blocks
+from .formatter import Formatter
 from .schema import Schema
 from .tags import TagSet
 
@@ -46,3 +47,14 @@ class Dataset:
             blocks.core_bucket.download_object_to_file_object(self.release_path, f)
             f.seek(0)
             return pl.read_parquet(f).select(self.schema.columns(include, exclude))
+
+    def to_markdown(self, level: int = 2) -> str:
+        """Formats the dataset into markdown.
+
+        Args:
+            level (int, optional): The header level of the documentation. Defaults to 2.
+
+        Returns:
+            str: The dataset described in markdown.
+        """
+        return Formatter(self, level)()
