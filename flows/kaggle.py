@@ -20,7 +20,7 @@ except OSError:
 
 from kaggle.rest import ApiException
 
-from borderlands.datasets import Dataset, media_inventory, oryx
+from borderlands.datasets import Dataset, oryx
 
 __project__ = Path(__file__).parent.parent
 
@@ -118,7 +118,6 @@ def staged_datasets_as_json(metadata: dict):
 
         # Add the datasets
         stage_dataset_as_json(oryx, tmpdir)
-        stage_dataset_as_json(media_inventory, tmpdir)
         try:
             yield tmpdir
         finally:
