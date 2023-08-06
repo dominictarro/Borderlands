@@ -17,7 +17,8 @@ from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 from prefecto.serializers.polars import PolarsSerializer
 
-from . import blocks, schema
+from . import blocks
+from .definitions import EquipmentLoss
 from .enums import EvidenceSource
 from .parser import article, parser
 from .utilities import web, wrappers
@@ -125,13 +126,13 @@ def parse_oryx_web_page(page: str, country: str | None = None) -> pl.DataFrame:
     generator = parser.OryxParser(soup, multi=country is None, logger=logger).parse(
         data_section_index
     )
-    df = pl.from_dicts(generator, schema=schema.EquipmentLoss.schema())
+    df = pl.from_dicts(generator, schema=EquipmentLoss.schema())
     logger.info(f"Found {len(df)} equipment losses for {country}")
 
     if country is not None:
         # Complete the country column
         df = df.with_columns(
-            pl.lit(country).alias(schema.EquipmentLoss.country.name),
+            pl.lit(country).alias(EquipmentLoss.country.name),
         )
     return df
 
@@ -142,14 +143,14 @@ def assign_status(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
     """Assigns statuses to the equipment losses.
 
     Requires:
-    - `schema.EquipmentLoss.description`
+    - `EquipmentLoss.description`
     """
     logger.info("Assigning statuses to equipment losses")
     lf = lf.with_columns(
         pl.when(
             # Check if the description contains any of the keywords
             pl.any_horizontal(
-                pl.col(schema.EquipmentLoss.description.name).str.contains(keyword)
+                EquipmentLoss.description.col.str.contains(keyword)
                 for keyword in keywords
             )
         )
@@ -175,7 +176,7 @@ def assign_status(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
         pl.when(pl.col(TMP).list.first().is_null())
         .then(pl.col(TMP).list.slice(1, None))
         .otherwise(pl.col(TMP))
-        .alias(schema.EquipmentLoss.status.name)
+        .alias(EquipmentLoss.status.name)
     )
     lf = lf.drop(status_columns + [TMP])
     return lf
@@ -189,14 +190,14 @@ def assign_country_of_production(
     """Assigns the country of production to the equipment losses.
 
     Requires:
-    - `schema.EquipmentLoss.country_of_production_flag_url`
+    - `EquipmentLoss.country_of_production_flag_url`
     """
     logger.info("Assigning country of production flags to equipment losses")
 
     lf = lf.with_columns(
-        pl.col(schema.EquipmentLoss.country_of_production_flag_url.name)
-        .map_dict(mapper)
-        .alias(schema.EquipmentLoss.country_of_production.name)
+        EquipmentLoss.country_of_production_flag_url.col.map_dict(mapper).alias(
+            EquipmentLoss.country_of_production.name
+        )
     )
     return lf
 
@@ -207,14 +208,13 @@ def assign_evidence_source(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.La
     """Assigns the evidence source to the equipment losses.
 
     Requires:
-    - `schema.EquipmentLoss.evidence_url`
+    - `EquipmentLoss.evidence_url`
     """
     logger.info("Assigning evidence sources to equipment losses")
     lf = lf.with_columns(
-        pl.col(schema.EquipmentLoss.evidence_url.name)
-        .apply(lambda x: urlparse(x).netloc)
+        EquipmentLoss.evidence_url.col.apply(lambda x: urlparse(x).netloc)
         .map_dict(DOMAIN_SOURCE_MAP)
-        .alias(schema.EquipmentLoss.evidence_source.name)
+        .alias(EquipmentLoss.evidence_source.name)
     )
     return lf
 
@@ -225,13 +225,13 @@ def calculate_url_hash(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFr
     """Calculates the SHA-256 of the UTF-8 encoded URL.
 
     Requires:
-    - `schema.EquipmentLoss.evidence_url`
+    - `EquipmentLoss.evidence_url`
     """
     logger.info("Calculating URL hashes")
     lf = lf.with_columns(
-        pl.col(schema.EquipmentLoss.evidence_url.name)
-        .apply(lambda url: hashlib.sha256(url.encode("utf-8")).hexdigest())
-        .alias(schema.EquipmentLoss.url_hash.name)
+        EquipmentLoss.evidence_url.col.apply(
+            lambda url: hashlib.sha256(url.encode("utf-8")).hexdigest()
+        ).alias(EquipmentLoss.url_hash.name)
     )
     return lf
 
@@ -245,19 +245,19 @@ def resolve_aircraft_and_naval_page_updates(
     replaced by the 'List of Naval Losses' and 'List of Aircraft Losses' pages.
 
     Requires:
-    - `schema.EquipmentLoss.country`
-    - `schema.EquipmentLoss.category`
-    - `schema.EquipmentLoss.model`
-    - `schema.EquipmentLoss.url_hash`
+    - `EquipmentLoss.country`
+    - `EquipmentLoss.category`
+    - `EquipmentLoss.model`
+    - `EquipmentLoss.url_hash`
     """
     """Removes aircraft and naval losses that exist on the new pages."""
     agg = (
         lf.groupby(
-            schema.EquipmentLoss.country.name,
-            schema.EquipmentLoss.model.name,
-            schema.EquipmentLoss.url_hash.name,
+            EquipmentLoss.country.name,
+            EquipmentLoss.model.name,
+            EquipmentLoss.url_hash.name,
         )
-        .agg(pl.col(schema.EquipmentLoss.category.name).unique().alias("categories"))
+        .agg(EquipmentLoss.category.col.unique().alias("categories"))
         .with_columns(
             (
                 pl.col("categories").list.contains(pl.lit("Aircraft"))
@@ -275,9 +275,9 @@ def resolve_aircraft_and_naval_page_updates(
     lf = lf.join(
         to_replace,
         on=[
-            schema.EquipmentLoss.country.name,
-            schema.EquipmentLoss.model.name,
-            schema.EquipmentLoss.url_hash.name,
+            EquipmentLoss.country.name,
+            EquipmentLoss.model.name,
+            EquipmentLoss.url_hash.name,
         ],
         how="left",
     ).filter(
@@ -286,9 +286,7 @@ def resolve_aircraft_and_naval_page_updates(
         pl.col("to_replace").is_null()
         | (
             pl.col("to_replace").is_not_null()
-            & pl.col(schema.EquipmentLoss.category.name)
-            .is_in(["Aircraft", "Naval Ships"])
-            .is_not()
+            & EquipmentLoss.category.col.is_in(["Aircraft", "Naval Ships"]).is_not()
         )
     )
 
@@ -296,8 +294,8 @@ def resolve_aircraft_and_naval_page_updates(
         lf.join(
             lookup,
             left_on=[
-                schema.EquipmentLoss.category.name,
-                schema.EquipmentLoss.model.name,
+                EquipmentLoss.category.name,
+                EquipmentLoss.model.name,
             ],
             right_on=["old_category", "model"],
             how="left",
@@ -306,7 +304,7 @@ def resolve_aircraft_and_naval_page_updates(
             pl.when(pl.col("new_category").is_not_null())
             .then(pl.col("new_category"))
             .otherwise(pl.col("category"))
-            .alias(schema.EquipmentLoss.category.name),
+            .alias(EquipmentLoss.category.name),
         )
         .drop("new_category")
     )
@@ -320,10 +318,10 @@ def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFra
     situations where multiple assets are identified in the same evidence.
 
     Requires:
-    - `schema.EquipmentLoss.country`
-    - `schema.EquipmentLoss.category`
-    - `schema.EquipmentLoss.model`
-    - `schema.EquipmentLoss.url_hash`
+    - `EquipmentLoss.country`
+    - `EquipmentLoss.category`
+    - `EquipmentLoss.model`
+    - `EquipmentLoss.url_hash`
 
     Examples:
 
@@ -337,16 +335,12 @@ def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFra
     To ensure that the two cases are not conflated, the case ID is used to discriminate between the two.
     """
     logger.info("Calculating case IDs")
-    lf = lf.with_columns(
-        pl.lit(1).alias(schema.EquipmentLoss.case_id.name)
-    ).with_columns(
-        pl.col(schema.EquipmentLoss.case_id.name)
-        .cumsum()
-        .over(
-            schema.EquipmentLoss.country.name,
-            schema.EquipmentLoss.category.name,
-            schema.EquipmentLoss.model.name,
-            schema.EquipmentLoss.url_hash.name,
+    lf = lf.with_columns(pl.lit(1).alias(EquipmentLoss.case_id.name)).with_columns(
+        EquipmentLoss.case_id.col.cumsum().over(
+            EquipmentLoss.country.name,
+            EquipmentLoss.category.name,
+            EquipmentLoss.model.name,
+            EquipmentLoss.url_hash.name,
         ),
     )
     return lf
@@ -390,9 +384,7 @@ def pre_process_dataframe(
     # Add the as of date
     lf = (
         lf.with_columns(
-            pl.lit(as_of_date, dtype=pl.Datetime).alias(
-                schema.EquipmentLoss.as_of_date.name
-            ),
+            pl.lit(as_of_date, dtype=pl.Datetime).alias(EquipmentLoss.as_of_date.name),
         )
         .collect()
         .lazy()
@@ -401,12 +393,10 @@ def pre_process_dataframe(
     # Clean strings
     lf = (
         lf.with_columns(
-            pl.col(schema.EquipmentLoss.category.name).str.strip(),
-            pl.col(schema.EquipmentLoss.model.name).str.strip(),
-            pl.col(schema.EquipmentLoss.evidence_url.name).str.strip(),
-            pl.col(
-                schema.EquipmentLoss.country_of_production_flag_url.name
-            ).str.strip(),
+            EquipmentLoss.category.col.str.strip(),
+            EquipmentLoss.model.col.str.strip(),
+            EquipmentLoss.evidence_url.col.str.strip(),
+            EquipmentLoss.country_of_production_flag_url.col.str.strip(),
         )
         .collect()
         .lazy()

@@ -8,7 +8,7 @@ import polars as pl
 from prefect import flow, task
 from prefect.context import FlowRunContext, get_run_context
 
-from borderlands import assets, blocks, schema
+from borderlands import assets, blocks, definitions
 from borderlands.oryx import get_oryx_page, parse_oryx_web_page, pre_process_dataframe
 from borderlands.paths import create_oryx_key
 from borderlands.utilities import tasks
@@ -26,8 +26,8 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
         str: The key the DataFrame was uploaded to.
     """
     key = create_oryx_key(dt, ext="parquet")
-    df = df.select(schema.EquipmentLoss.columns())
-    df = df.sort(schema.EquipmentLoss.columns(include=[schema.Tag.dimension]))
+    df = df.select(definitions.EquipmentLoss.columns())
+    df = df.sort(definitions.EquipmentLoss.columns(include=[definitions.Tag.dimension]))
     with io.BytesIO() as buffer:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)

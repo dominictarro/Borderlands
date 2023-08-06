@@ -20,8 +20,8 @@ except OSError:
 
 from kaggle.rest import ApiException
 
-from borderlands.datasets import Dataset, oryx
-from borderlands.schema import Tag, TagSet
+from borderlands.definitions import oryx
+from borderlands.schema import Dataset, Tag, TagSet
 
 __project__ = Path(__file__).parent.parent
 

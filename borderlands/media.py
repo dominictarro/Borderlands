@@ -15,7 +15,9 @@ from prefect import task
 from prefect_aws import S3Bucket
 from prefecto.logging import get_prefect_or_default_logger
 
-from . import blocks, datasets, enums, paths, schema
+from . import blocks, enums, paths
+from .definitions import EquipmentLoss, Media, media_inventory
+from .schema import Tag
 from .utilities import io_, web, wrappers
 
 INVENTORY_SUBFOLDER = "inventory"
@@ -26,45 +28,45 @@ def create_media_inventory_from_oryx(df: pl.DataFrame) -> str:
     """Create a media inventory from the Oryx data.
 
     Args:
-        df (pl.DataFrame): DataFrame following `schema.EquipmentLoss`.
+        df (pl.DataFrame): DataFrame following `EquipmentLoss`.
 
     Returns:
         str: The key the media inventory was uploaded to.
 
     Requires:
-        - `schema.EquipmentLoss.evidence_url`
-        - `schema.EquipmentLoss.evidence_source`
-        - `schema.EquipmentLoss.url_hash`
-        - `schema.Media.url`
-        - `schema.Media.evidence_source`
-        - `schema.Media.url_hash`
+        - `EquipmentLoss.evidence_url`
+        - `EquipmentLoss.evidence_source`
+        - `EquipmentLoss.url_hash`
+        - `Media.url`
+        - `Media.evidence_source`
+        - `Media.url_hash`
 
     """
+    print(df)
     lf = df.lazy()
 
+    print("A" * 10)
     # Get the media from the evidence_url
     lf = (
-        lf.groupby(schema.EquipmentLoss.url_hash.name)
+        lf.groupby(EquipmentLoss.url_hash.name)
         .agg(
-            pl.col(schema.EquipmentLoss.evidence_url.name)
-            .first()
-            .alias(schema.Media.url.name),
-            pl.col(schema.EquipmentLoss.evidence_source.name)
-            .first()
-            .alias(schema.Media.evidence_source.name),
+            EquipmentLoss.evidence_url.col.first().alias(Media.url.name),
+            EquipmentLoss.evidence_source.col.first().alias(Media.evidence_source.name),
         )
-        .rename({schema.EquipmentLoss.url_hash.name: schema.Media.url_hash.name})
+        .rename({EquipmentLoss.url_hash.name: Media.url_hash.name})
     )
-
+    print("B" * 10)
     # Fill the others with None
-    null_fields = schema.Media.iter(
-        exclude=[schema.Tag.inherited, schema.Tag.dimension]
-    )
+    null_fields = list(Media.iter(exclude=[Tag.inherited, Tag.dimension]))
+    print(lf.columns, list(Media.iter()))
+    print(null_fields)
     if null_fields:
         lf = lf.with_columns(
             pl.lit(None).cast(f.dtype).alias(f.name) for f in null_fields
         )
-    lf = lf.select(schema.Media.columns())
+        print("C" * 10)
+    lf = lf.select(Media.columns())
+    print("D" * 10)
     return lf.collect()
 
 
@@ -81,9 +83,8 @@ def merge_inventory_state(current: pl.DataFrame, empty: pl.DataFrame) -> pl.Data
     """
     df = pl.concat([current, empty])
     lf = df.lazy()
-    lf = lf.groupby(schema.Media.columns(include=[schema.Tag.dimension])).agg(
-        pl.col(col).first()
-        for col in schema.Media.columns(exclude=[schema.Tag.dimension])
+    lf = lf.groupby(Media.columns(include=[Tag.dimension])).agg(
+        pl.col(col).first() for col in Media.columns(exclude=[Tag.dimension])
     )
     return lf.collect()
 
@@ -95,11 +96,9 @@ def get_latest_media_inventory() -> pl.DataFrame:
     Returns:
         pl.DataFrame: The media inventory.
     """
-    bucket: S3Bucket = S3Bucket.load(datasets.media_inventory.host_bucket)
+    bucket: S3Bucket = S3Bucket.load(media_inventory.host_bucket)
     with io.BytesIO() as buffer:
-        bucket.download_object_to_file_object(
-            datasets.media_inventory.release_path, buffer
-        )
+        bucket.download_object_to_file_object(media_inventory.release_path, buffer)
         buffer.seek(0)
         return pl.read_parquet(buffer)
 
@@ -123,17 +122,17 @@ def create_media_key(ctx: dict) -> str:
         ctx (dict): The context for the media.
 
     Requires:
-        - `schema.Media.evidence_source`
-        - `schema.Media.url_hash`
-        - `schema.Media.file_type`
-        - `schema.Media.url`
+        - `Media.evidence_source`
+        - `Media.url_hash`
+        - `Media.file_type`
+        - `Media.url`
 
     Returns:
         str: The media key.
     """
     return (
-        f"{ctx[schema.Media.evidence_source.name]}/"
-        f"{ctx[schema.Media.url_hash.name]}{ctx[schema.Media.file_type.name] or '.unknown'}"
+        f"{ctx[Media.evidence_source.name]}/"
+        f"{ctx[Media.url_hash.name]}{ctx[Media.file_type.name] or '.unknown'}"
     )
 
 
@@ -146,15 +145,15 @@ def get_downloaded_and_not_downloaded(
         df (pl.DataFrame): The dataframe containing the media urls.
 
     Requires:
-        - `schema.Media.url`
-        - `schema.Media.url_hash`
-        - `schema.Media.media_key`
+        - `Media.url`
+        - `Media.url_hash`
+        - `Media.media_key`
 
     Returns:
         tuple[pl.DataFrame, pl.DataFrame]: The downloaded and not downloaded dataframes.
     """
-    downloaded = df.filter(pl.col(schema.Media.media_key.name).is_not_null())
-    not_downloaded = df.filter(pl.col(schema.Media.media_key.name).is_null())
+    downloaded = df.filter(Media.media_key.col.is_not_null())
+    not_downloaded = df.filter(Media.media_key.col.is_null())
     return downloaded, not_downloaded
 
 
@@ -179,31 +178,31 @@ async def download_file(
     try:
         try:
             await sem.acquire()
-            url = ctx[schema.Media.url.name]
+            url = ctx[Media.url.name]
 
             async with client.stream("GET", url) as r:
                 r.raise_for_status()
                 # Infer the file type and with that the media type
-                ctx[schema.Media.file_type.name] = io_.infer_media_extension(
-                    ctx[schema.Media.url.name], r.headers
+                ctx[Media.file_type.name] = io_.infer_media_extension(
+                    ctx[Media.url.name], r.headers
                 )
-                ctx[schema.Media.media_type.name] = (
+                ctx[Media.media_type.name] = (
                     enums.MediaType.IMAGE.value
-                    if ctx[schema.Media.file_type.name]
+                    if ctx[Media.file_type.name]
                     else enums.MediaType.UNKNOWN.value
                 )
                 path = create_media_key(ctx)
                 with tempfile.SpooledTemporaryFile(
-                    prefix=ctx[schema.Media.url_hash.name], suffix=".partial"
+                    prefix=ctx[Media.url_hash.name], suffix=".partial"
                 ) as fo:
                     async for chunk in r.aiter_bytes():
                         fo.write(chunk)
                     fo.seek(0)
                     # Assign the media key and type
                     ctx[
-                        schema.Media.media_key.name
+                        Media.media_key.name
                     ] = await blocks.media_bucket.upload_from_file_object(fo, path)
-                    ctx[schema.Media.as_of_date.name] = datetime.datetime.utcnow()
+                    ctx[Media.as_of_date.name] = datetime.datetime.utcnow()
         finally:
             sem.release()
     except httpx.HTTPStatusError as e:
@@ -259,9 +258,7 @@ def evidence_source_handler(
             logger = get_prefect_or_default_logger()
             logger.info(f"Searching for {evidence_source.value} media to download")
 
-            df = df.filter(
-                pl.col(schema.Media.evidence_source.name) == evidence_source.value
-            )
+            df = df.filter(Media.evidence_source.col == evidence_source.value)
             downloaded, not_downloaded = get_downloaded_and_not_downloaded(df)
 
             if not_downloaded.shape[0] == 0:
@@ -275,9 +272,9 @@ def evidence_source_handler(
             contexts: list[dict[str, str]] = not_downloaded.to_dicts()
             await coro(contexts, *args, **kwargs)
             # Convert altered contexts back to a dataframe
-            newly_downloaded = pl.from_dicts(contexts, schema=schema.Media.schema())
+            newly_downloaded = pl.from_dicts(contexts, schema=Media.schema())
             # Combine the downloaded and newly downloaded dataframes
-            results[schema.Media.evidence_source.name] = pl.concat(
+            results[Media.evidence_source.name] = pl.concat(
                 [downloaded, newly_downloaded]
             )
 
@@ -302,13 +299,13 @@ async def download_postimg(contexts: list[dict], concurrency: int = 10):
         concurrency (int, optional): The number of concurrent downloads. Defaults to 10.
 
     Requires:
-        - `schema.Media.url`
-        - `schema.Media.url_hash`
-        - `schema.Media.media_key`
-        - `schema.Media.as_of_date`
-        - `schema.Media.evidence_source`
-        - `schema.Media.file_type`
-        - `schema.Media.media_type`
+        - `Media.url`
+        - `Media.url_hash`
+        - `Media.media_key`
+        - `Media.as_of_date`
+        - `Media.evidence_source`
+        - `Media.file_type`
+        - `Media.media_type`
 
     Returns:
         pl.DataFrame: The dataframe for all postimg data with the media keys.
@@ -318,7 +315,7 @@ async def download_postimg(contexts: list[dict], concurrency: int = 10):
         async with anyio.create_task_group() as tg:
             for ctx in contexts:
                 if (
-                    ctx[schema.Media.evidence_source.name]
+                    ctx[Media.evidence_source.name]
                     == enums.EvidenceSource.POST_IMG.value
                 ):
                     tg.start_soon(download_file, client, ctx, sem)
@@ -335,7 +332,7 @@ async def download(df: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: The dataframe with the media keys.
     """
     logger = get_prefect_or_default_logger()
-    evidence_sources = df[schema.Media.evidence_source.name].unique().to_list()
+    evidence_sources = df[Media.evidence_source.name].unique().to_list()
     results: dict[str, pl.DataFrame] = {}
     async with anyio.create_task_group() as tg:
         for evidence_source in evidence_sources:
@@ -345,6 +342,6 @@ async def download(df: pl.DataFrame) -> pl.DataFrame:
             else:
                 logger.warning(f"No handler for {evidence_source}")
                 results[evidence_source] = df.filter(
-                    pl.col(schema.Media.evidence_source.name) == evidence_source
+                    Media.evidence_source.col == evidence_source
                 )
     return pl.concat(results.values())

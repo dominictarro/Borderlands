@@ -5,7 +5,7 @@ import polars as pl
 from prefect import flow, task
 from prefect.context import get_run_context
 
-from borderlands import blocks, schema
+from borderlands import blocks, definitions
 from borderlands.media import (
     create_inventory_key,
     create_media_inventory_from_oryx,
@@ -28,8 +28,8 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
         str: The key the DataFrame was uploaded to.
     """
     key = create_inventory_key(dt)
-    df = df.select(schema.Media.columns())
-    df = df.sort(schema.Media.as_of_date.name)
+    df = df.select(definitions.Media.columns())
+    df = df.sort(definitions.Media.as_of_date.name)
     with io.BytesIO() as buffer:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)

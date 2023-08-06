@@ -1,108 +1,9 @@
 """
 Schema for the Borderlands dataset.
 """
-import dataclasses as dc
-import enum
-from typing import Iterator
-
 import polars as pl
 
-
-class Tag(enum.Enum):
-    """A class to hold all tags for the fields."""
-
-    attribute = "attribute"
-    context = "context"
-    debug = "debug"
-    dimension = "dimension"
-    equipment = "equipment"
-    inherited = "inherited"
-    media = "media"
-    metadata = "metadata"
-
-    def __eq__(self, __value: object) -> bool:
-        """Overrides the equality operator to allow for string comparison."""
-        if isinstance(__value, str):
-            return self.value == __value
-        elif isinstance(__value, Tag):
-            return self.value == __value.value
-        return super().__eq__(__value)
-
-
-TagSet = list[Tag | str]
-
-
-@dc.dataclass
-class Field:
-    dtype: pl.DataType
-    tags: TagSet = dc.field(default_factory=list)
-    name: str = None
-    description: str = dc.field(default_factory=str)
-
-
-class Schema:
-    """Base class to create a schema with. It provides a `__fields__` attribute that is
-    a dictionary of the fields of the model.
-    """
-
-    __fields__: dict[str, Field] = {}
-
-    def __init_subclass__(cls) -> None:
-        """Adds fields to the __fields__ registry."""
-        cls.__fields__ = {}
-        for k, v in cls.__dict__.items():
-            if isinstance(v, Field):
-                cls.__fields__[k] = v
-                if v.name is None:
-                    v.name = k
-        return cls
-
-    @classmethod
-    def iter(
-        cls,
-        include: TagSet | None = None,
-        exclude: TagSet | None = None,
-    ) -> Iterator[Field]:
-        """Iterates over the fields of the schema and yields the name and field object. Filters fields based on the `include` and `exclude` parameters.
-
-        Args:
-            include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
-            exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
-
-        Yields:
-            Iterator[tuple[str, Field]]: A tuple of the field name and field object.
-        """
-        for f in cls.__fields__.values():
-            if include and all(t not in include for t in f.tags):
-                continue
-            if exclude and any(t in exclude for t in f.tags):
-                continue
-            yield f
-
-    @classmethod
-    def columns(
-        cls,
-        include: TagSet | None = None,
-        exclude: TagSet | None = None,
-    ) -> list[str]:
-        return [f.name for f in cls.iter(include=include, exclude=exclude)]
-
-    @classmethod
-    def schema(
-        cls,
-        include: TagSet | None = None,
-        exclude: TagSet | None = None,
-    ) -> dict[str, pl.DataType]:
-        """Returns a dictionary schema for Polars.
-
-        Args:
-            include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
-            exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
-
-        Returns:
-            dict[str, pl.DataType]: A dictionary of the field names and their data types.
-        """
-        return {f.name: f.dtype for f in cls.iter(include=include, exclude=exclude)}
+from .schema import Dataset, Field, Schema, Tag
 
 
 class EquipmentLoss(Schema):
@@ -229,3 +130,30 @@ class Media(Schema):
         tags=[Tag.metadata],
         description="The date the row was generated.",
     )
+
+
+##############################################################################
+# DATASETS
+##############################################################################
+
+oryx = Dataset(
+    label="Oryx",
+    host_bucket="s3-bucket-borderlands-core",
+    release_path="releases/oryx.parquet",
+    schema=EquipmentLoss,
+    description=(
+        "The Oryx dataset is a complete collection of the equipment losses in the Oryx database. The loss cases have been cleaned and transformed into JSON objects."
+        "\n\n### Sources"
+        "\n\n - [Attack On Europe: Documenting Ukrainian Equipment Losses During The 2022 Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html)"
+        "\n - [Attack On Europe: Documenting Russian Equipment Losses During The 2022 Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-equipment.html)"
+        "\n - [List Of Naval Losses During The Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/03/list-of-naval-losses-during-2022.html)"
+        "\n - [List Of Aircraft Losses During The Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/03/list-of-aircraft-losses-during-2022.html)"
+    ),
+)
+
+media_inventory = Dataset(
+    label="Media Inventory",
+    host_bucket="s3-bucket-borderlands-core",
+    release_path="releases/media-inventory.parquet",
+    schema=Media,
+)
