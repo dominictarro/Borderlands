@@ -42,11 +42,7 @@ class Dataset:
         with io.BytesIO() as f:
             blocks.core_bucket.download_object_to_file_object(self.release_path, f)
             f.seek(0)
-            return (
-                pl.scan_parquet(f)
-                .select(self.schema.columns(include, exclude))
-                .collect()
-            )
+            return pl.read_parquet(f).select(self.schema.columns(include, exclude))
 
 
 oryx = Dataset(
