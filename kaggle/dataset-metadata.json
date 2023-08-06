@@ -1,0 +1,25 @@
+{
+    "title": "Borderlands",
+    "id": "dominictarro/Borderlands",
+    "licenses": [
+        {
+            "name": "CC0-1.0"
+        }
+    ],
+    "subtitle": "Russo-Ukrainian War data.",
+    "description": "",
+    "isPrivate": true,
+    "keywords": [
+        "Military",
+        "Ukraine",
+        "Russia",
+        "War"
+    ],
+    "collaborators": [
+        {
+            "username": "dominictarro",
+            "role": "writer"
+        }
+    ],
+    "data": []
+}

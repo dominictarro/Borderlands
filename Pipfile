@@ -11,6 +11,7 @@ lxml = "*"
 prefecto = ">=0.0.4"
 polars = "*"
 httpx = "*"
+kaggle = ">=1.5.16"
 
 [dev-packages]
 pipenv = "*"
