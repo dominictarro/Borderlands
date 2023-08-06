@@ -21,6 +21,7 @@ except OSError:
 from kaggle.rest import ApiException
 
 from borderlands.datasets import Dataset, oryx
+from borderlands.schema import Tag, TagSet
 
 __project__ = Path(__file__).parent.parent
 
@@ -88,17 +89,24 @@ def assess_dataset_status(api: KaggleApi, metadata: dict) -> DatasetStatus:
         raise e
 
 
-def stage_dataset_as_json(dataset: Dataset, folder: str | Path) -> Path:
+def stage_dataset_as_json(
+    dataset: Dataset,
+    folder: str | Path,
+    include: TagSet | None = None,
+    exclude: TagSet | None = None,
+) -> Path:
     """Stage a dataset as JSON records.
 
     Args:
         dataset (Dataset): The dataset to stage.
         folder (str | Path): The folder to stage the dataset to.
+        include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
+        exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
 
     Returns:
         Path: The path to the staged dataset.
     """
-    df = dataset.read()
+    df = dataset.read(include, exclude)
     path = Path(folder) / f"{dataset.label}.json"
     df.write_json(path, row_oriented=True)
     return path
@@ -117,7 +125,7 @@ def staged_datasets_as_json(metadata: dict):
             json.dump(metadata, f, indent=4)
 
         # Add the datasets
-        stage_dataset_as_json(oryx, tmpdir)
+        stage_dataset_as_json(oryx, tmpdir, exclude=[Tag.metadata, Tag.debug])
         try:
             yield tmpdir
         finally:
