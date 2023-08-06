@@ -4,15 +4,15 @@ Blocks usable by all deployments.
 import os
 
 from dotenv import load_dotenv
-from prefect.blocks.core import Block
 from prefect_aws import AwsCredentials, S3Bucket
 from prefect_github import GitHubRepository
 from pydantic import SecretStr
 
 try:
-    from . import tf
+    from . import tf, utils
 except ImportError:
     import tf
+    import utils
 
 load_dotenv()
 
@@ -43,26 +43,15 @@ borderlands_persistence = S3Bucket(
 
 
 if __name__ == "__main__":
-    import asyncio
-    from collections.abc import Coroutine
 
-    async def save(block: Block, dependencies: list[Coroutine] | None = None):
-        uuid = await block.save(name=block._block_document_name, overwrite=True)
-        print(f"Saved {block._block_document_name} with UUID {uuid}")
-        if dependencies:
-            await asyncio.gather(*dependencies)
-
-    async def main():
-        await asyncio.gather(
-            save(
-                aws_credentials,
-                # These must wait for aws_credentials to be saved
-                dependencies=[
-                    save(borderlands_core),
-                    save(borderlands_persistence),
-                ],
-            ),
-            save(borderlands_github),
-        )
-
-    asyncio.run(main())
+    utils.run(
+        utils.save(
+            aws_credentials,
+            # These must wait for aws_credentials to be saved
+            downstream=[
+                utils.save(borderlands_core),
+                utils.save(borderlands_persistence),
+            ],
+        ),
+        utils.save(borderlands_github),
+    )
