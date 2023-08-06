@@ -37,6 +37,7 @@ class Field:
     dtype: pl.DataType
     tags: TagSet = dc.field(default_factory=list)
     name: str = None
+    description: str = dc.field(default_factory=str)
 
 
 class Schema:
@@ -108,45 +109,123 @@ class EquipmentLoss(Schema):
     """Schema for the equipment model."""
 
     # Dimensions
-    country: Field = Field(pl.Utf8, tags=[Tag.dimension])
-    category: Field = Field(pl.Utf8, tags=[Tag.dimension])
-    model: Field = Field(pl.Utf8, tags=[Tag.dimension])
-    url_hash: Field = Field(pl.Utf8, tags=[Tag.dimension])
-    case_id = Field(pl.Int32, tags=[Tag.dimension])
+    country: Field = Field(
+        pl.Utf8,
+        tags=[Tag.dimension],
+        description="The country that suffered the equipment loss.",
+    )
+    category: Field = Field(
+        pl.Utf8,
+        tags=[Tag.dimension],
+        description="The equipment category.",
+    )
+    model: Field = Field(
+        pl.Utf8,
+        tags=[Tag.dimension],
+        description="The equipment model.",
+    )
+    url_hash: Field = Field(
+        pl.Utf8,
+        tags=[Tag.dimension],
+        description="A SHA-256 hash of the `evidence_url`.",
+    )
+    case_id = Field(
+        pl.Int32,
+        tags=[Tag.dimension],
+        description="A special ID for discriminating equipment losses when their `country`, `category`, `model`, and `url_hash` are the same.",
+    )
 
     # Attributes
-    status = Field(pl.List(pl.Utf8), tags=[Tag.attribute])
-    evidence_url = Field(pl.Utf8, tags=[Tag.attribute, Tag.media])
+    status = Field(
+        pl.List(pl.Utf8),
+        tags=[Tag.attribute],
+        description="The statuses of the equipment loss.",
+    )
+    evidence_url = Field(
+        pl.Utf8,
+        tags=[Tag.attribute, Tag.media],
+        description="The URL to the evidence of the equipment loss.",
+    )
 
     # Equipment Model Context
-    country_of_production = Field(pl.Utf8, tags=[Tag.context, Tag.equipment])
+    country_of_production = Field(
+        pl.Utf8,
+        tags=[Tag.context, Tag.equipment],
+        description="The ISO Alpha-3 code of the country that produces the `model`.",
+    )
     country_of_production_flag_url = Field(
-        pl.Utf8, tags=[Tag.context, Tag.debug, Tag.equipment]
+        pl.Utf8,
+        tags=[Tag.context, Tag.debug, Tag.equipment],
+        description="The URL to the flag of the country that produces the `model`.",
     )
 
     # Context
-    evidence_source = Field(pl.Utf8, tags=[Tag.context, Tag.equipment])
+    evidence_source = Field(
+        pl.Utf8,
+        tags=[Tag.context, Tag.equipment],
+        description="The source of the evidence.",
+    )
 
     # Lineage/debugging
-    description = Field(pl.Utf8, tags=[Tag.context, Tag.debug])
-    id_ = Field(pl.Int32, tags=[Tag.context, Tag.debug])
+    description = Field(
+        pl.Utf8,
+        tags=[Tag.context, Tag.debug],
+        description="The Oryx description the equipment loss was extracted from.",
+    )
+    id_ = Field(
+        pl.Int32,
+        tags=[Tag.context, Tag.debug],
+        description="The Oryx ID the equipment loss was labeled with.",
+    )
 
     # Metadata
-    as_of_date = Field(pl.Datetime, tags=[Tag.metadata])
+    as_of_date = Field(
+        pl.Datetime,
+        tags=[Tag.metadata],
+        description="The date the row was generated.",
+    )
 
 
 class Media(Schema):
     """Schema for the media model."""
 
     # Dimensions
-    url_hash: Field = Field(pl.Utf8, tags=[Tag.dimension, Tag.inherited])
+    url_hash: Field = Field(
+        pl.Utf8,
+        tags=[Tag.dimension, Tag.inherited],
+        description="A SHA-256 hash of the `url`.",
+    )
 
     # Attributes
-    url = Field(pl.Utf8, tags=[Tag.attribute, Tag.inherited])
-    evidence_source = Field(pl.Utf8, tags=[Tag.attribute, Tag.inherited])
-    media_key = Field(pl.Utf8, tags=[Tag.attribute])
-    file_type = Field(pl.Utf8, tags=[Tag.attribute])
-    media_type = Field(pl.Utf8, tags=[Tag.attribute])
+    url = Field(
+        pl.Utf8,
+        tags=[Tag.attribute, Tag.inherited],
+        description="The URL to the evidence.",
+    )
+    evidence_source = Field(
+        pl.Utf8,
+        tags=[Tag.attribute, Tag.inherited],
+        description="The source of the evidence.",
+    )
+    media_key = Field(
+        pl.Utf8,
+        tags=[Tag.attribute],
+        description="The S3 Object Key to the media.",
+    )
+    file_type = Field(
+        pl.Utf8,
+        tags=[Tag.attribute],
+        description="The file type/extension.",
+    )
+    media_type = Field(
+        pl.Utf8,
+        tags=[Tag.attribute],
+        description="The media classification.",
+    )
 
     # Metadata
-    as_of_date = Field(pl.Datetime, tags=[Tag.metadata])
+    as_of_date = Field(
+        pl.Datetime,
+        tags=[Tag.metadata],
+        description="The date the row was generated.",
+    )
