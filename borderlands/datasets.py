@@ -8,6 +8,7 @@ import io
 import polars as pl
 
 from . import blocks
+from .schema import EquipmentLoss, Media, Schema, TagSet
 
 
 @dc.dataclass
@@ -24,23 +25,40 @@ class Dataset:
     label: str
     host_bucket: str
     release_path: str
+    schema: Schema
 
-    def read(self) -> pl.DataFrame:
-        """Read the dataset's latest release."""
+    def read(
+        self, include: TagSet | None = None, exclude: TagSet | None = None
+    ) -> pl.DataFrame:
+        """Read the dataset's latest release.
+
+        Args:
+            include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
+            exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
+
+        Returns:
+            pl.DataFrame: The dataset's latest release.
+        """
         with io.BytesIO() as f:
             blocks.core_bucket.download_object_to_file_object(self.release_path, f)
             f.seek(0)
-            return pl.read_parquet(f)
+            return (
+                pl.scan_parquet(f)
+                .select(self.schema.columns(include, exclude))
+                .collect()
+            )
 
 
 oryx = Dataset(
     label="Oryx",
     host_bucket="s3-bucket-borderlands-core",
     release_path="releases/oryx.parquet",
+    schema=EquipmentLoss,
 )
 
 media_inventory = Dataset(
     label="Media Inventory",
     host_bucket="s3-bucket-borderlands-core",
     release_path="releases/media-inventory.parquet",
+    schema=Media,
 )
