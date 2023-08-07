@@ -9,24 +9,23 @@
 
 - [Borderlands](#borderlands)
   - [About](#about)
-    - [Pages](#pages)
+  - [Access](#access)
   - [References](#references)
 
 ## About
 
-*Public access is temporarily unavailable while I develop the API.*
-
 This project was started with the objective of making the Oryx's visually-confirmed losses for the Russo-Ukrainian War more accessible for analysis. While I am personally incurring the AWS costs, I greatly appreciate [donations](https://patreon.com/tarrodot?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_content=join_link) to help support the maintenance and growth of this project. Borderlands was built such that others may replicate the system privately should they choose to do so.
 
-### Pages
+## Access
+
+The JSON form of the Oryx dataset is available for download on [Kaggle](https://www.kaggle.com/dominictarro/borderlands).
+
+## References
 
 - [Attack On Europe: Documenting Ukrainian Equipment Losses During The 2022 Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html)
 - [Attack On Europe: Documenting Russian Equipment Losses During The 2022 Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-equipment.html)
 - [List Of Naval Losses During The Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/03/list-of-naval-losses-during-2022.html)
 - [List Of Aircraft Losses During The Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/03/list-of-aircraft-losses-during-2022.html)
-
-## References
-
 - [ISO Codes](https://www.iso.org/obp/ui/#home)
 - [Infrastructure](./infrastructure/README.md)
 - [Data Documentation](./docs/)
