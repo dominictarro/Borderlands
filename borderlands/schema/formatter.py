@@ -5,10 +5,56 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import polars as pl
+
 if TYPE_CHECKING:
     from .dataset import Dataset
     from .fields import Field
     from .schema import FieldFilter
+
+
+def format_type(dtype: pl.DataType) -> str:
+    """Format a Polars type to a more legible type.
+
+    Args:
+        dtype (pl.DataType): The Polars type.
+
+    Returns:
+        str: Formatted type.
+    """
+    if dtype in (
+        pl.Decimal,
+        pl.Float32,
+        pl.Float64,
+        pl.Int8,
+        pl.Int16,
+        pl.Int32,
+        pl.Int64,
+        pl.UInt8,
+        pl.UInt16,
+        pl.UInt32,
+        pl.UInt64,
+    ):
+        return "numeric"
+    elif dtype == pl.Boolean:
+        return "boolean"
+    elif dtype in (pl.Categorical, pl.Utf8):
+        return "string"
+    elif dtype == pl.Date:
+        return "date"
+    elif dtype == pl.Datetime:
+        return "datetime"
+    elif dtype in (pl.Duration, pl.Time):
+        return "timecode"
+    elif isinstance(dtype, pl.List):
+        return f"list({format_type(dtype.inner)})"
+    elif isinstance(dtype, pl.Struct):
+        return f"struct({', '.join([f'{field.name}: {format_type(field.dtype)}' for field in dtype.fields])})"
+    else:
+        if isinstance(dtype, pl.DataType):
+            raise ValueError(f"Unsupported datatype {dtype}")
+        else:
+            raise ValueError(f"Unknown datatype {dtype}")
 
 
 class Formatter:
@@ -127,4 +173,4 @@ class Formatter:
         Returns:
             str: The formatted field.
         """
-        return f"| {field.name} | {field.dtype} | {field.description} |"
+        return f"| {field.name} | {format_type(field.dtype)} | {field.description} |"
