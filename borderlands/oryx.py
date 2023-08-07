@@ -13,6 +13,7 @@ import httpx
 import polars as pl
 from prefect.serializers import CompressedPickleSerializer
 from prefect.tasks import exponential_backoff, task
+from prefect_slack import messages
 from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 from prefecto.serializers.polars import PolarsSerializer
@@ -47,6 +48,68 @@ async def get_oryx_page(url: str) -> str:
         r = await client.get(url)
         r.raise_for_status()
         return r.text
+
+
+@task(
+    name="Unmapped Country Flags Alert",
+    description="Sends a Slack message if there are any unmapped country flags.",
+)
+async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
+    """Searches for unmapped country flags and sends a Slack message if any are found.
+
+    Requires:
+    - `EquipmentLoss.country_of_production_flag_url`
+    - `EquipmentLoss.country_of_production`
+    """
+    logger = get_prefect_or_default_logger()
+    unmapped: dict[str, str | int] = (
+        df.filter(EquipmentLoss.country_of_production.col.is_null())[
+            EquipmentLoss.country_of_production_flag_url.name
+        ]
+        .value_counts()
+        .to_dicts()
+    )
+
+    if unmapped:
+        # Format the sections
+        urls = [
+            case[EquipmentLoss.country_of_production_flag_url.name] for case in unmapped
+        ]
+        n, affected = len(urls), sum([case["counts"] for case in unmapped])
+        logger.warning(
+            f"Found {n} unmapped country of production flags affecting {affected} records."
+        )
+        message_blocks = [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": "Unmapped Flag URLs"},
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Cases:*\n{n}",
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": f"*Affected Records:*\n{affected}",
+                    },
+                ],
+            },
+            {"type": "divider"},
+            {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(urls)}},
+        ]
+        try:
+            await messages.send_incoming_webhook_message(
+                slack_webhook=blocks.webhook,
+                slack_blocks=message_blocks,
+            )
+        except Exception as e:
+            logger.error("Failed to send Slack message", exc_info=e, stack_info=True)
+            logger.info("Unmapped country of production flags:\n%s", "\n".join(urls))
+    else:
+        logger.info("All country of production flags successfully mapped.")
 
 
 class Status(enum.Enum):

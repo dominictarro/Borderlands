@@ -9,7 +9,12 @@ from prefect import flow, task
 from prefect.context import FlowRunContext, get_run_context
 
 from borderlands import assets, blocks, definitions
-from borderlands.oryx import get_oryx_page, parse_oryx_web_page, pre_process_dataframe
+from borderlands.oryx import (
+    alert_on_unmapped_country_flags,
+    get_oryx_page,
+    parse_oryx_web_page,
+    pre_process_dataframe,
+)
 from borderlands.paths import create_oryx_key
 from borderlands.utilities import tasks
 
@@ -82,5 +87,5 @@ def oryx_flow() -> str:
         ]
     )
     df = pre_process_dataframe(df, mapper, category_corrections, dt)
-
+    alert_on_unmapped_country_flags(df)
     return upload(df, dt)
