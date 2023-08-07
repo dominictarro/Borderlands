@@ -4,6 +4,7 @@ Flow to release the Borderlands dataset to Kaggle.
 import datetime
 import enum
 import json
+import re
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
@@ -114,93 +115,12 @@ def stage_dataset_as_json(
     return path
 
 
-def create_kaggle_type(dtype: pl.DataType) -> str:
-    """Create a Kaggle type from a Polars type.
-
-    Args:
-        dtype (pl.DataType): The Polars type.
-
-    Returns:
-        str: The Kaggle type.
-    """
-    if dtype in (
-        pl.Decimal,
-        pl.Float32,
-        pl.Float64,
-        pl.Int8,
-        pl.Int16,
-        pl.Int32,
-        pl.Int64,
-        pl.UInt8,
-        pl.UInt16,
-        pl.UInt32,
-        pl.UInt64,
-    ):
-        return "numeric"
-    elif dtype == pl.Boolean:
-        return "boolean"
-    elif dtype in (pl.Categorical, pl.Date, pl.Duration, pl.Time, pl.Utf8):
-        return "string"
-    elif dtype == pl.Datetime:
-        return "datetime"
-    elif isinstance(dtype, pl.List):
-        return f"list({create_kaggle_type(dtype.inner)})"
-    elif isinstance(dtype, pl.Struct):
-        return f"struct({', '.join([f'{field.name}: {create_kaggle_type(field.dtype)}' for field in dtype.fields])})"
-    else:
-        raise ValueError(f"Unknown Polars type {dtype}")
-
-
-def create_resource_column(field: Field) -> dict:
-    """Create a resource column from a field.
-
-    Args:
-        field (Field): The field to create a resource column from.
-
-    Returns:
-        dict: The resource column.
-    """
-    return {
-        "name": field.name,
-        "type": create_kaggle_type(field.dtype),
-        "description": field.description,
-    }
-
-
-def create_resource_from_dataset(
-    dataset: Dataset,
-    include: FieldFilter | None = None,
-    exclude: FieldFilter | None = None,
-) -> dict:
-    """Create a resource from a dataset.
-
-    Args:
-        dataset (Dataset): The dataset to create a resource from.
-        include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
-        exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
-
-    Returns:
-        dict: The resource.
-    """
-    return {
-        "path": f"{dataset.label}.json",
-        "description": dataset.description,
-        "schema": {
-            "fields": [
-                create_resource_column(field)
-                for field in dataset.schema.iter(include, exclude)
-            ]
-        },
-    }
-
-
 def add_dataset(
     folder: str,
     dataset: Dataset,
-    metadata: dict,
     include: FieldFilter | None = None,
     exclude: FieldFilter | None = None,
-) -> Dataset:
+) -> str:
     """Add a dataset to the catalog.
 
     Args:
@@ -210,11 +130,11 @@ def add_dataset(
         include (TagSet, optional): A list of tags to include. Defaults to None (no inclusion requirement).
         exclude (TagSet, optional): A list of tags to exclude. Defaults to None (no exclusion filter).
 
+    Returns:
+        str: The dataset documentation.
     """
     stage_dataset_as_json(dataset, folder, include=include, exclude=exclude)
-    metadata["resources"].append(
-        create_resource_from_dataset(dataset, include=include, exclude=exclude)
-    )
+    return dataset.to_markdown(include=include, exclude=exclude)
 
 
 @contextmanager
@@ -225,10 +145,15 @@ def staged_datasets_as_json(metadata: dict):
         metadata (dict): The dataset metadata.
     """
     with tempfile.TemporaryDirectory() as tmpdir:
-        metadata["resources"] = metadata.get("resources", [])
+        docs = []
 
         # Add the datasets and add their documentation
-        add_dataset(tmpdir, oryx, metadata, exclude=[Tag.metadata, Tag.debug])
+        docs.append(add_dataset(tmpdir, oryx, exclude=[Tag.metadata, Tag.debug]))
+        metadata["description"] = re.sub(
+            pattern="<!-- CATALOG BEGINS HERE -->\n<!-- CATALOG ENDS HERE -->",
+            repl="\n\n".join(docs),
+            string=metadata["description"],
+        )
 
         # Add the metadata file
         with open(Path(tmpdir) / "dataset-metadata.json", "w") as f:

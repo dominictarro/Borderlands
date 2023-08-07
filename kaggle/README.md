@@ -5,3 +5,6 @@
 The *Borderlands* project is a public collection of high-granularity datasets related to the Russo-Ukrainian War.
 
 This data is updated **daily** and is available for free to the public.
+
+<!-- CATALOG BEGINS HERE -->
+<!-- CATALOG ENDS HERE -->
