@@ -42,10 +42,8 @@ def create_media_inventory_from_oryx(df: pl.DataFrame) -> str:
         - `Media.url_hash`
 
     """
-    print(df)
     lf = df.lazy()
 
-    print("A" * 10)
     # Get the media from the evidence_url
     lf = (
         lf.groupby(EquipmentLoss.url_hash.name)
@@ -55,18 +53,13 @@ def create_media_inventory_from_oryx(df: pl.DataFrame) -> str:
         )
         .rename({EquipmentLoss.url_hash.name: Media.url_hash.name})
     )
-    print("B" * 10)
     # Fill the others with None
     null_fields = list(Media.iter(exclude=[Tag.inherited, Tag.dimension]))
-    print(lf.columns, list(Media.iter()))
-    print(null_fields)
     if null_fields:
         lf = lf.with_columns(
             pl.lit(None).cast(f.dtype).alias(f.name) for f in null_fields
         )
-        print("C" * 10)
     lf = lf.select(Media.columns())
-    print("D" * 10)
     return lf.collect()
 
 
