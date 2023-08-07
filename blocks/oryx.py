@@ -4,9 +4,10 @@ Oryx configuration blocks.
 from prefect_aws import ECSTask
 
 try:
-    from . import tf
+    from . import tf, utils
 except ImportError:
     import tf
+    import utils
 
 oryx_ecs_task: ECSTask = ECSTask(
     name="ecs-task-oryx",
@@ -38,4 +39,4 @@ oryx_ecs_task: ECSTask = ECSTask(
 )
 
 if __name__ == "__main__":
-    oryx_ecs_task.save(name=oryx_ecs_task._block_document_name, overwrite=True)
+    utils.run(utils.save(oryx_ecs_task))

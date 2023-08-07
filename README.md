@@ -2,7 +2,8 @@
 
 # Borderlands
 
-<a href="https://patreon.com/tarrodot" target="_blank"><img src="https://img.shields.io/badge/Donate-Patreon-blue"></a>
+<a href="https://www.kaggle.com/dominictarro/borderlands" target="_blank"><img src="https://img.shields.io/badge/Kaggle-20BEFF?style=for-the-badge&logo=Kaggle&logoColor=white"></a>
+<a href="https://patreon.com/tarrodot" target="_blank"><img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white"></a>
 
 *ETL for Russo-Ukrainian war data.*
 

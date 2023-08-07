@@ -7,14 +7,16 @@ from prefect_aws import S3Bucket
 try:
     import media
     import oryx
+    import publish
 except ImportError:
-    from flows import media, oryx
+    from flows import media, oryx, publish
 
-from borderlands import blocks, datasets
+from borderlands import blocks, definitions
+from borderlands.schema import Dataset
 
 
 @task(log_prints=True)
-def release_dataset(path: str, dataset: datasets.Dataset) -> str:
+def release_dataset(path: str, dataset: Dataset) -> str:
     """Release the dataset to the bucket."""
     src_bucket = S3Bucket.load(dataset.host_bucket)
     path = blocks.core_bucket.stream_from(
@@ -35,11 +37,13 @@ def borderlands_flow():
     oryx_key = oryx.oryx_flow()
     oryx_release = release_dataset.submit(
         oryx_key,
-        datasets.oryx,
+        definitions.oryx,
     )
 
     media_key = media.download_media(oryx_release)
-    oryx_release = release_dataset.submit(
+    release_dataset.submit(
         media_key,
-        datasets.media_inventory,
+        definitions.media_inventory,
     )
+
+    publish.release_dataset_to_kaggle(wait_for=[oryx_release])
