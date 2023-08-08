@@ -18,6 +18,7 @@ oryx_ecs_task: ECSTask = ECSTask(
         "EXTRA_PIP_PACKAGES": " ".join(
             (
                 "beautifulsoup4",
+                "kaggle",
                 "lxml",
                 "polars",
                 "prefect-github",
