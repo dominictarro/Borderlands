@@ -13,7 +13,9 @@ from _pytest.fixtures import FixtureRequest, SubRequest
 from _pytest.monkeypatch import MonkeyPatch
 from prefect.testing.utilities import prefect_test_harness
 from prefect_aws import AwsCredentials, S3Bucket
+from prefect_slack import SlackWebhook
 from prefecto.testing.s3 import mock_bucket
+from pydantic import SecretStr
 
 if TYPE_CHECKING:
     from borderlands.parser.article import ArticleParser
@@ -36,6 +38,10 @@ def test_data_path() -> Path:
 def prefect_db():
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
+        SlackWebhook(
+            _block_document_name="slack-webhook-borderlands",
+            url=SecretStr("https://hooks.slack.com/services/..."),
+        ).save(name="slack-webhook-borderlands")
         yield
 
 
@@ -89,6 +95,23 @@ def flag_url_mapper(test_data_path: Path) -> dict[str, str]:
     ) as fo:
         data = json.load(fo)
         return {k: v["Alpha-3"] for k, v in data.items()}
+
+
+@pytest.fixture(autouse=False, scope="function")
+def mock_slack_webhook(monkeypatch: MonkeyPatch):
+    """Mocks the Slack webhook."""
+    import prefect_slack.messages
+
+    def mock_send_incoming_webhook_message(*args, **kwds):
+        """Mocks the send_incoming_webhook_message function."""
+        pass
+
+    monkeypatch.setattr(
+        prefect_slack.messages,
+        "send_incoming_webhook_message",
+        mock_send_incoming_webhook_message,
+    )
+    yield
 
 
 @pytest.fixture(autouse=False, scope="function")
