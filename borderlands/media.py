@@ -267,9 +267,7 @@ def evidence_source_handler(
             # Convert altered contexts back to a dataframe
             newly_downloaded = pl.from_dicts(contexts, schema=Media.schema())
             # Combine the downloaded and newly downloaded dataframes
-            results[Media.evidence_source.name] = pl.concat(
-                [downloaded, newly_downloaded]
-            )
+            results[evidence_source.value] = pl.concat([downloaded, newly_downloaded])
 
         if evidence_source.value in __evidence_handler_registery__:
             raise ValueError(
