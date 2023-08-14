@@ -27,3 +27,7 @@ make-deployments: flows/orchestrator.py flows/media.py flows/oryx.py deployments
 upload-deployments: deployments/orchestrator-daily.yaml
 	prefect deployments apply deployments/orchestrator-daily.yaml
 deployments-workflow: make-deployments upload-deployments
+
+# Documentation generation
+docs: docs/ docs/*.md tool.py
+	python tool.py docs
