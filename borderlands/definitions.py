@@ -156,4 +156,9 @@ media_inventory = Dataset(
     host_bucket="s3-bucket-borderlands-core",
     release_path="releases/media-inventory.parquet",
     schema=Media,
+    description=(
+        "The Media Inventory is a collection of evidence files that were extracted from the Oryx dataset."
+        "\n\n### Supported Sources"
+        "\n\n - [Postimages](https://postimg.cc/)"
+    ),
 )

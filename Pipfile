@@ -28,6 +28,7 @@ moto = ">=3.1.16"
 prefecto = {extras = ["moto"], version = ">=0.0.3"}
 prefect = {version = ">=0.0.3", extras = ["mock"]}
 pytest = "*"
+click = "*"
 
 [requires]
 python_version = "3.11"
