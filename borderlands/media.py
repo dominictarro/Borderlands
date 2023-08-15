@@ -256,7 +256,9 @@ def evidence_source_handler(
 
             if not_downloaded.shape[0] == 0:
                 logger.info(f"No {evidence_source.value} media to download")
-                return downloaded
+                results[evidence_source.value] = downloaded
+                return
+
             logger.info(
                 f"Downloading {not_downloaded.shape[0]} {evidence_source.value} media files"
             )
