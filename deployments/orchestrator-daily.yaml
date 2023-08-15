@@ -3,7 +3,7 @@
 ###
 name: Daily
 description: Orchestrates the Oryx pipeline execution and dataset releases.
-version: d5d90874dc6f066109ab00ffe998e084
+version: 0b886cf897837097610abf1008a09cb4
 # The work queue that will handle this deployment's runs
 work_queue_name: default
 work_pool_name: default
@@ -14,7 +14,7 @@ schedule:
   cron: 0 12 * * *
   timezone: America/New_York
   day_or: true
-is_schedule_active: false
+is_schedule_active: true
 infra_overrides: {}
 
 ###
@@ -25,8 +25,8 @@ manifest_path: null
 infrastructure:
   type: ecs-task
   env:
-    EXTRA_PIP_PACKAGES: beautifulsoup4 lxml polars prefect-github prefect-aws prefecto
-      httpx
+    EXTRA_PIP_PACKAGES: beautifulsoup4 kaggle lxml polars prefect-github prefect-aws
+      prefect-slack prefecto httpx
   labels: {}
   name: ecs-task-oryx
   command: null
@@ -85,5 +85,5 @@ parameter_openapi_schema:
   properties: {}
   required: null
   definitions: null
-timestamp: '2023-07-30T21:37:44.200170+00:00'
+timestamp: '2023-08-15T04:33:33.240146+00:00'
 triggers: []
