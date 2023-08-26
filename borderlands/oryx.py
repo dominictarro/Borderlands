@@ -101,7 +101,7 @@ async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
             {"type": "section", "text": {"type": "mrkdwn", "text": "\n".join(urls)}},
         ]
         try:
-            await messages.send_incoming_webhook_message(
+            messages.send_incoming_webhook_message.fn(
                 slack_webhook=blocks.webhook,
                 slack_blocks=message_blocks,
             )

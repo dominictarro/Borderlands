@@ -11,9 +11,11 @@ import bs4
 import pytest
 from _pytest.fixtures import FixtureRequest, SubRequest
 from _pytest.monkeypatch import MonkeyPatch
+from prefect import task
 from prefect.testing.utilities import prefect_test_harness
 from prefect_aws import AwsCredentials, S3Bucket
 from prefect_slack import SlackWebhook
+from prefecto.logging import get_prefect_or_default_logger
 from prefecto.testing.s3 import mock_bucket
 from pydantic import SecretStr
 
@@ -102,9 +104,10 @@ def mock_slack_webhook(monkeypatch: MonkeyPatch):
     """Mocks the Slack webhook."""
     import prefect_slack.messages
 
-    def mock_send_incoming_webhook_message(*args, **kwds):
+    @task
+    async def mock_send_incoming_webhook_message(*args, **kwds):
         """Mocks the send_incoming_webhook_message function."""
-        pass
+        get_prefect_or_default_logger().info("Mocked the Slack webhook")
 
     monkeypatch.setattr(
         prefect_slack.messages,
@@ -134,6 +137,18 @@ def mock_oryx_page_request(test_data_path: Path, monkeypatch: MonkeyPatch):
                 == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html"
             ):
                 filename = "ukraine.html.gz"
+            elif (
+                url
+                == "https://www.oryxspioenkop.com/2022/03/list-of-naval-losses-during-2022.html"
+            ):
+                filename = "naval.html.gz"
+            elif (
+                url
+                == "https://www.oryxspioenkop.com/2022/03/list-of-aircraft-losses-during-2022.html"
+            ):
+                filename = "aircraft.html.gz"
+            else:
+                raise ValueError(f"URL not mocked: {url}")
 
             with gzip.open(folder / filename, "rb") as f:
                 response = requests.Response()
