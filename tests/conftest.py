@@ -137,6 +137,18 @@ def mock_oryx_page_request(test_data_path: Path, monkeypatch: MonkeyPatch):
                 == "https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html"
             ):
                 filename = "ukraine.html.gz"
+            elif (
+                url
+                == "https://www.oryxspioenkop.com/2022/03/list-of-naval-losses-during-2022.html"
+            ):
+                filename = "naval.html.gz"
+            elif (
+                url
+                == "https://www.oryxspioenkop.com/2022/03/list-of-aircraft-losses-during-2022.html"
+            ):
+                filename = "aircraft.html.gz"
+            else:
+                raise ValueError(f"URL not mocked: {url}")
 
             with gzip.open(folder / filename, "rb") as f:
                 response = requests.Response()
