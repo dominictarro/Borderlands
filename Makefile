@@ -1,8 +1,3 @@
-
-# Run the tests
-tests: tests/ tests/**/test_*.py
-	pytest -v tests/
-
 # Deployment of flows
 make-deployments: flows/orchestrator.py flows/media.py flows/oryx.py deployments/
 	prefect deployments build flows/orchestrator.py:borderlands_flow \

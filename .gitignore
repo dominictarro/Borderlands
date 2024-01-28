@@ -1,8 +1,10 @@
 # Over my dead body
 .DS_Store
 
-# Local virtual environment
-Pipfile.lock
+# Local development
+.vscode/
+.pytest_cache/
+.ruff_cache/
 
 # Terraform state / deployment / output files
 .terraform/

@@ -1,12 +1,18 @@
+# Ignore files unused by the flows
 assets/
 blocks/
+deployments/
+docs/
 infrastructure/
+src/scripts/
 tests/
-.flake8
 .git*
+.pre-commit-config.yaml
+.ruff.toml
+CHANGELOG.md
+Dockerfile
 LICENSE
 Makefile
-manage.py
 Pipfile*
 pyproject.toml
-*.md
+README.md

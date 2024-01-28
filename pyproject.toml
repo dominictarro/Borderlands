@@ -1,7 +1,27 @@
-[tool.commitizen]
-name = "cz_conventional_commits"
-tag_format = "$version"
-version_type = "semver"
-version = "0.2.0"
-update_changelog_on_bump = true
-major_version_zero = true
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "borderlands"
+dynamic = ["version"]
+description = "ETL library for Russo-Ukrainian war data."
+readme = "README.md"
+requires-python = ">=3.11"
+# Don't need dependencies, those should be installed in the container
+# and are managed by pipenv
+dependencies = []
+license.file = "LICENSE"
+
+[project.urls]
+Code = "https://github.com/dominictarro/borderlands"
+Documentation = "https://github.com/dominictarro/borderlands/blob/main/README.md"
+
+[tool.interrogate]
+exclude = ["tests/"]
+ignore-init-module = true
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]

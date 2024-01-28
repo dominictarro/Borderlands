@@ -23,12 +23,15 @@ isort = {extras = ["pyproject"], version = "*"}
 commitizen = "*"
 pygit2 = "*"
 python-dotenv = "*"
-moto = ">=3.1.16"
 prefecto = {extras = ["moto"], version = ">=0.0.3"}
 prefect = {version = ">=0.0.3", extras = ["mock"]}
 pytest = "*"
 click = "*"
 prefect-github = ">=0.2.2"
+moto = {extras = ["s3"], version = "<5.0,>=3.1.16"}
 
 [requires]
 python_version = "3.11"
+
+[scripts]
+tests = "pytest tests/"
