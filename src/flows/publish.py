@@ -10,6 +10,7 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
+from kaggle.rest import ApiException
 from prefect import flow, task
 from prefect.blocks.system import Secret
 from prefect.context import get_run_context
@@ -23,7 +24,6 @@ except OSError:
 from borderlands.definitions import oryx
 from borderlands.schema import Dataset, Tag
 from borderlands.schema.schema import FieldFilter
-from kaggle.rest import ApiException
 
 __project__ = Path(__file__).parent.parent
 

@@ -6,6 +6,9 @@ import datetime
 import io
 
 import polars as pl
+from prefect import flow, task
+from prefect.context import FlowRunContext, get_run_context
+
 from borderlands import assets, blocks, definitions
 from borderlands.oryx import (
     alert_on_unmapped_country_flags,
@@ -15,8 +18,6 @@ from borderlands.oryx import (
 )
 from borderlands.paths import create_oryx_key
 from borderlands.utilities import tasks
-from prefect import flow, task
-from prefect.context import FlowRunContext, get_run_context
 
 
 @task
