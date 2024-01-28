@@ -7,11 +7,6 @@
 
 *ETL for Russo-Ukrainian war data.*
 
-- [Borderlands](#borderlands)
-  - [About](#about)
-  - [Access](#access)
-  - [References](#references)
-
 ## About
 
 This project was started with the objective of making the Oryx's visually-confirmed losses for the Russo-Ukrainian War more accessible for analysis. While I am personally incurring the AWS costs, I greatly appreciate [donations](https://patreon.com/tarrodot?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=creatorshare_creator&utm_content=join_link) to help support the maintenance and growth of this project. Borderlands was built such that others may replicate the system privately should they choose to do so.
@@ -19,6 +14,26 @@ This project was started with the objective of making the Oryx's visually-confir
 ## Access
 
 The JSON form of the Oryx dataset is available for download on [Kaggle](https://www.kaggle.com/dominictarro/borderlands).
+
+## Infrastructure
+
+The infrastructure for this project is built on AWS. It is built using Prefect's provisioning command
+
+```sh
+prefect work-pool create --type ecs:push --provision-infra ecs-pool
+```
+
+You will be prompted for custom names. Choose no.
+
+Set up the other AWS resources using the following commands:
+
+```sh
+terraform -chdir=infrastructure/terraform/ plan -var-file=terraform.tfvars -out=terraform.tfplan
+# Review the plan
+terraform -chdir=infrastructure/terraform/ apply "terraform.tfplan"
+# Update the docs (if applicable)
+terraform-docs markdown infrastructure/terraform/ --header-from main.tf --output-file README.md --indent 2
+````
 
 ## References
 

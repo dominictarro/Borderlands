@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 beautifulsoup4 = "*"
-prefect = "*"
+prefect = ">=2.14.17"
 prefect-aws = "*"
 lxml = "*"
 prefecto = ">=0.0.4"
@@ -21,7 +21,6 @@ flake8 = "*"
 black = "*"
 isort = {extras = ["pyproject"], version = "*"}
 commitizen = "*"
-prefect-github = "*"
 pygit2 = "*"
 python-dotenv = "*"
 moto = ">=3.1.16"
@@ -29,6 +28,7 @@ prefecto = {extras = ["moto"], version = ">=0.0.3"}
 prefect = {version = ">=0.0.3", extras = ["mock"]}
 pytest = "*"
 click = "*"
+prefect-github = ">=0.2.2"
 
 [requires]
 python_version = "3.11"

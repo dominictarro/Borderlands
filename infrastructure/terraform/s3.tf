@@ -28,6 +28,11 @@ resource "aws_s3_bucket_lifecycle_configuration" "persistence_bucket" {
     }
 }
 
+output "persistence_bucket_id" {
+    value = aws_s3_bucket.persistence_bucket.id
+    description = "ID of the S3 bucket to store Prefect persistence files."
+}
+
 /*
 Core datasets and releases bucket.
 */
@@ -40,4 +45,9 @@ variable "s3_bucket_core" {
 
 resource "aws_s3_bucket" "core_bucket" {
     bucket = var.s3_bucket_core
+}
+
+output "core_bucket_id" {
+    value = aws_s3_bucket.core_bucket.id
+    description = "ID of the S3 bucket to store Borderlands files."
 }

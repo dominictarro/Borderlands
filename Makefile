@@ -1,6 +1,6 @@
 
 # Automate the deployment of the infrastructure
-terraform-plan: infrastructure/terraform/ infrastructure/terraform/main.tf infrastructure/terraform/variables.tf infrastructure/terraform/terraform.tfvars
+terraform-plan: infrastructure/terraform/ infrastructure/terraform/main.tf infrastructure/terraform/terraform.tfvars
 	terraform -chdir=infrastructure/terraform/ plan -var-file=terraform.tfvars -out=terraform.tfplan
 terraform-apply: terraform-plan
 	terraform -chdir=infrastructure/terraform/ apply "terraform.tfplan"
