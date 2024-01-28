@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 
 import bs4
 import pytest
-from _pytest.fixtures import FixtureRequest, SubRequest
 from _pytest.monkeypatch import MonkeyPatch
 from prefect import task
 from prefect.testing.utilities import prefect_test_harness
@@ -18,7 +17,6 @@ from prefect_aws import AwsCredentials, S3Bucket
 from prefect_slack import SlackWebhook
 from prefecto.logging import get_prefect_or_default_logger
 from prefecto.testing.s3 import mock_bucket
-from pydantic import SecretStr
 
 if TYPE_CHECKING:
     from borderlands.parser.article import ArticleParser
@@ -37,33 +35,52 @@ def test_data_path() -> Path:
     return TESTS_PATH / "data"
 
 
+@pytest.fixture(scope="session")
+def credentials() -> AwsCredentials:
+    """The AWS credentials."""
+    yield AwsCredentials()
+
+
+@pytest.fixture(scope="session")
+def core_bucket(credentials: AwsCredentials) -> S3Bucket:
+    """The core bucket."""
+    yield S3Bucket(bucket_name="borderlands-core", credentials=credentials)
+
+
+@pytest.fixture(scope="session")
+def persistence_bucket(credentials: AwsCredentials) -> S3Bucket:
+    """The persistence bucket."""
+    yield S3Bucket(bucket_name="borderlands-persistence", credentials=credentials)
+
+
+@pytest.fixture(scope="session")
+def slack_webhook() -> SlackWebhook:
+    """The Slack webhook."""
+    yield SlackWebhook(
+        _block_document_name="slack-webhook-borderlands",
+        url="https://hooks.slack.com/services/...",
+    )
+
+
 @pytest.fixture(autouse=True, scope="session")
-def prefect_db():
+def prefect_db(slack_webhook, credentials, core_bucket, persistence_bucket):
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
-        SlackWebhook(
-            _block_document_name="slack-webhook-borderlands",
-            url=SecretStr("https://hooks.slack.com/services/..."),
-        ).save(name="slack-webhook-borderlands")
+        slack_webhook.save(name="slack-webhook-borderlands")
+        credentials.save(name="aws-credentials-prefect")
+        core_bucket.save(name="s3-bucket-borderlands-core")
+        persistence_bucket.save(name="s3-bucket-borderlands-persistence")
         yield
 
 
 @pytest.fixture(autouse=False, scope="function")
-def mock_buckets(request: FixtureRequest | SubRequest, test_data_path: Path):
+def mock_buckets(
+    core_bucket: S3Bucket, persistence_bucket: S3Bucket, test_data_path: Path
+):
     """Mocks the S3 buckets."""
-    export_path = EXPORT_PATH / request.function.__name__
-    credentials = AwsCredentials()
-    credentials.save(name="aws-credentials-prefect", overwrite=True)
-    with mock_bucket("borderlands-core", export_path=export_path):
-        core = S3Bucket(bucket_name="borderlands-core", credentials=credentials)
-        core.save(name="s3-bucket-borderlands-core", overwrite=True)
-        core.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
-        with mock_bucket(
-            "borderlands-persistence", export_path=export_path, activate_moto=False
-        ):
-            S3Bucket(
-                bucket_name="borderlands-persistence", credentials=credentials
-            ).save(name="s3-bucket-borderlands-persistence", overwrite=True)
+    with mock_bucket(core_bucket.bucket_name):
+        core_bucket.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
+        with mock_bucket(persistence_bucket.bucket_name, activate_moto=False):
             yield
 
 
