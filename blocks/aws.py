@@ -5,9 +5,8 @@ Blocks usable by all deployments.
 import os
 
 from dotenv import load_dotenv
+from prefect.blocks.system import Secret
 from prefect_aws import AwsCredentials, S3Bucket
-from prefect_github import GitHubRepository
-from pydantic import SecretStr
 
 try:
     from . import tf, utils
@@ -17,17 +16,10 @@ except ImportError:
 
 load_dotenv()
 
-
-borderlands_github: GitHubRepository = GitHubRepository(
-    reference="main",
-    repository_url="https://github.com/dominictarro/Borderlands.git",
-    _block_document_name="github-repository-borderlands",
-)
-
 aws_credentials = AwsCredentials(
     _block_document_name="aws-credentials-prefect",
     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
-    aws_secret_access_key=SecretStr(os.getenv("AWS_SECRET_ACCESS_KEY")),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
 )
 
 borderlands_core = S3Bucket(
@@ -42,6 +34,11 @@ borderlands_persistence = S3Bucket(
     credentials=aws_credentials,
 )
 
+ecr = Secret(
+    _block_document_name="ecr-image-borderlands-scrape",
+    value=os.environ["ECR_IMAGE_TAG"],
+)
+
 
 if __name__ == "__main__":
 
@@ -54,5 +51,5 @@ if __name__ == "__main__":
                 utils.save(borderlands_persistence),
             ],
         ),
-        utils.save(borderlands_github),
+        utils.save(ecr),
     )

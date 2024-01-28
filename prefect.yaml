@@ -1,0 +1,57 @@
+# Welcome to your prefect.yaml file! You can use this file for storing and managing
+# configuration for deploying your flows. We recommend committing this file to source
+# control along with your flow code.
+
+# Generic metadata about this project
+name: borderlands
+prefect-version: 2.14.17
+
+# build section allows you to manage and build docker images
+build:
+
+# push section allows you to manage if and how this project is uploaded to remote locations
+push:
+
+# pull section allows you to provide instructions for cloning this project in remote locations
+pull:
+- prefect.deployments.steps.git_clone: &clone_repo
+    id: clone_repo
+    repository: https://github.com/dominictarro/borderlands.git
+    branch: main
+    credentials: '{{ prefect.blocks.github-credentials.github-credentials-pat }}'
+
+
+# the deployments section allows you to provide configuration for deploying flows
+deployments:
+- name: "Daily Oryx Scrape"
+  version: null
+  tags: []
+  description: "Scrapes the latest data from Oryx, downloads the images, and releases a new version of the dataset to Kaggle."
+  schedule:
+    # Run every day at midnight
+    cron: '0 0 * * *'
+    timezone: EST
+    day_or: true
+  flow_name: null
+  entrypoint: "flows/orchestrator.py:borderlands_flow"
+  parameters: {}
+  work_pool:
+    name: ecs
+    work_queue_name: scrape
+    job_variables:
+      image: '{{ prefect.blocks.secret.ecr-image-borderlands-scrape }}'
+      cpu: 1024
+      memory: 2048
+      cloudwatch_logs_options:
+        awslogs-stream-prefix: borderlands-scrape
+  pull:
+  - prefect.deployments.steps.git_clone:
+    <<: *clone_repo
+  - prefect.deployments.steps.run_shell_script:
+    # Because we store the code in src/, it will not be automatically included
+    # in the PYTHONPATH at runtime. Get around this by installing it as a
+    # package.
+    # Example: https://github.com/zzstoatzz/prefect-monorepo
+    directory: '{{ clone_repo.directory }}'
+    script: |
+      pip install .
