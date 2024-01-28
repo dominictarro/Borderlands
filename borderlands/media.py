@@ -1,6 +1,7 @@
 """
 
 """
+
 import datetime
 import functools
 import io
@@ -192,9 +193,9 @@ async def download_file(
                         fo.write(chunk)
                     fo.seek(0)
                     # Assign the media key and type
-                    ctx[
-                        Media.media_key.name
-                    ] = await blocks.media_bucket.upload_from_file_object(fo, path)
+                    ctx[Media.media_key.name] = (
+                        await blocks.media_bucket.upload_from_file_object(fo, path)
+                    )
                     ctx[Media.as_of_date.name] = datetime.datetime.utcnow()
         finally:
             sem.release()

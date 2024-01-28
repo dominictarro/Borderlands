@@ -1,6 +1,7 @@
 """
 Module for parsing equipment category HTML trees.
 """
+
 from __future__ import annotations
 
 import re

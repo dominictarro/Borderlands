@@ -1,6 +1,7 @@
 """
 Entrypoint for scripts.
 """
+
 import click
 
 

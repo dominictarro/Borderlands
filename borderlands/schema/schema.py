@@ -1,5 +1,6 @@
 """A module for defining dataset schemas for Polars.
 """
+
 import dataclasses as dc
 from typing import Iterator
 

@@ -1,6 +1,7 @@
 """
 Tags for the fields in the schema.
 """
+
 import enum
 
 

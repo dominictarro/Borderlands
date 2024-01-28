@@ -1,6 +1,7 @@
 """
 Module for loading static assets in the pipeline's folder.
 """
+
 from __future__ import annotations
 
 import json

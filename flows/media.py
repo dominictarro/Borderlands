@@ -2,9 +2,6 @@ import datetime
 import io
 
 import polars as pl
-from prefect import flow, task
-from prefect.context import get_run_context
-
 from borderlands import blocks, definitions
 from borderlands.media import (
     create_inventory_key,
@@ -14,6 +11,8 @@ from borderlands.media import (
     merge_inventory_state,
 )
 from borderlands.utilities import tasks
+from prefect import flow, task
+from prefect.context import get_run_context
 
 
 @task

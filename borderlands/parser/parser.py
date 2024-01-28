@@ -1,6 +1,7 @@
 """
 Generic parser for parsing the HTML of single and multi country Oryx loss pages.
 """
+
 import logging
 import re
 from typing import Any, Generator

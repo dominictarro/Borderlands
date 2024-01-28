@@ -1,16 +1,17 @@
 """
 Module to extract data from the Oryx website and perform basic processing and restructuring.
 """
+
 import datetime
 import enum
 import hashlib
 import logging
-import zoneinfo
 from urllib.parse import urlparse
 
 import bs4
 import httpx
 import polars as pl
+import zoneinfo
 from prefect.serializers import CompressedPickleSerializer
 from prefect.tasks import exponential_backoff, task
 from prefect_slack import messages

@@ -1,6 +1,7 @@
 """
 Blocks for interacting with Kaggle.
 """
+
 import os
 
 from dotenv import load_dotenv

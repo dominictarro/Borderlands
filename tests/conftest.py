@@ -1,6 +1,7 @@
 """
 Pytest configuration.
 """
+
 import gzip
 import json
 import shutil

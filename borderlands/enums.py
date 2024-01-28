@@ -1,5 +1,6 @@
 """Enumerations that need to be shared between modules.
 """
+
 import enum
 
 

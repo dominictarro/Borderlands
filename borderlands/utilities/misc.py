@@ -1,11 +1,12 @@
 """
 Utility classes and methods.
 """
+
 from __future__ import annotations
 
 import datetime
 import string
-from typing import Callable, List
+from typing import List
 
 ALPHANUMERICS = string.ascii_letters + string.digits
 
@@ -28,8 +29,12 @@ def parse_alphabet_items(
     >>> parse_alphabet_items("12, 34a 5b6 7", alphabet=string.digits)
     >>> ['12', '34', '5', '6', '7']
     """
-    tail_pointer_logic: Callable[[str], bool] = lambda char: (char not in alphabet)
-    head_pointer_logic: Callable[[str], bool] = lambda char: (char in alphabet)
+
+    def tail_pointer_logic(char: str) -> bool:
+        return char not in alphabet
+
+    def head_pointer_logic(char: str) -> bool:
+        return char in alphabet
 
     # Switch head and tail pointer checks if excluding
     if exclude:

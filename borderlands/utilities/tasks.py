@@ -1,6 +1,7 @@
 """
 Generic tasks for the Borderlands project.
 """
+
 import json
 import sys
 from io import BufferedIOBase, TextIOBase

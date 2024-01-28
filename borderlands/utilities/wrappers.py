@@ -1,4 +1,5 @@
 """Utility wrappers for functions."""
+
 import functools
 
 import polars as pl

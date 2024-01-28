@@ -1,6 +1,7 @@
 """
 Blocks usable by all deployments.
 """
+
 import os
 
 from dotenv import load_dotenv

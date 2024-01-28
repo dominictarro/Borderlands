@@ -1,6 +1,7 @@
 """
 Test the result of transforming Oryx data.
 """
+
 from typing import TYPE_CHECKING
 
 import pandas as pd

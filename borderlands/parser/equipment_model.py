@@ -1,6 +1,7 @@
 """
 Module for parsing equipment model HTML trees.
 """
+
 from __future__ import annotations
 
 import re
@@ -45,9 +46,9 @@ class EquipmentModelParser(ParserBase):
                 for case in EvidenceParser(tag, logger=self.logger).parse():
                     # Set equipment model attributes
                     case["model"] = model
-                    case[
-                        "country_of_production_flag_url"
-                    ] = country_of_production_flag_url
+                    case["country_of_production_flag_url"] = (
+                        country_of_production_flag_url
+                    )
                     yield case
             except Exception:
                 self.logger.error(traceback.format_exc())

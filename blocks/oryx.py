@@ -1,6 +1,7 @@
 """
 Oryx configuration blocks.
 """
+
 from prefect_aws import ECSTask
 
 try:
