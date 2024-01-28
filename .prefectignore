@@ -1,4 +1,5 @@
 # Ignore files unused by the flows
+.github/
 assets/
 blocks/
 deployments/

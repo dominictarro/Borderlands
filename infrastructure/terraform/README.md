@@ -32,7 +32,9 @@ No modules.
 
 | Name | Type |
 |------|------|
+| [aws_iam_policy_attachment.ecr_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy_attachment) | resource |
 | [aws_iam_policy_attachment.s3_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_policy_attachment) | resource |
+| [aws_iam_user.cicd](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
 | [aws_iam_user.prefect](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_user) | resource |
 | [aws_s3_bucket.core_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
 | [aws_s3_bucket.persistence_bucket](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket) | resource |
@@ -50,6 +52,7 @@ No modules.
 
 | Name | Description |
 |------|-------------|
+| <a name="output_borderlands_cicd_user_name"></a> [borderlands\_cicd\_user\_name](#output\_borderlands\_cicd\_user\_name) | Name of the Borderlands CI/CD AWS user. |
 | <a name="output_core_bucket_id"></a> [core\_bucket\_id](#output\_core\_bucket\_id) | ID of the S3 bucket to store Borderlands files. |
 | <a name="output_persistence_bucket_id"></a> [persistence\_bucket\_id](#output\_persistence\_bucket\_id) | ID of the S3 bucket to store Prefect persistence files. |
 | <a name="output_prefect_user_name"></a> [prefect\_user\_name](#output\_prefect\_user\_name) | Name of the Prefect AWS user. |
