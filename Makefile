@@ -1,12 +1,4 @@
 
-# Automate the deployment of the infrastructure
-terraform-plan: infrastructure/terraform/ infrastructure/terraform/main.tf infrastructure/terraform/terraform.tfvars
-	terraform -chdir=infrastructure/terraform/ plan -var-file=terraform.tfvars -out=terraform.tfplan
-terraform-apply: terraform-plan
-	terraform -chdir=infrastructure/terraform/ apply "terraform.tfplan"
-terraform-docs: infrastructure/terraform/ infrastructure/terraform/main.tf
-	terraform-docs markdown infrastructure/terraform/ --header-from main.tf --output-file README.md --indent 2
-
 # Run the tests
 tests: tests/ tests/**/test_*.py
 	pytest -v tests/
