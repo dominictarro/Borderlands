@@ -17,7 +17,7 @@ pull:
   - prefect.deployments.steps.git_clone:
       id: clone_repo
       repository: https://github.com/dominictarro/borderlands.git
-      branch: upgrade-practices
+      branch: main
       credentials: '{{ prefect.blocks.github-credentials.github-credentials-pat }}'
   - prefect.deployments.steps.run_shell_script:
       # Because we store the code in src/, it will not be automatically included
