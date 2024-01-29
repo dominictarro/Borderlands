@@ -184,6 +184,7 @@ def update_kaggle_dataset(api: KaggleApi, metadata: dict, date: datetime.date):
 @flow(
     name="Release Dataset to Kaggle",
     log_prints=True,
+    timeout_seconds=600,
 )
 def release_dataset_to_kaggle():
     """Make the Kaggle dataset."""
