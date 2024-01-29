@@ -15,26 +15,6 @@ This project was started with the objective of making the Oryx's visually-confir
 
 The JSON form of the Oryx dataset is available for download on [Kaggle](https://www.kaggle.com/dominictarro/borderlands).
 
-## Infrastructure
-
-The infrastructure for this project is built on AWS. It is built using Prefect's provisioning command
-
-```sh
-prefect work-pool create --type ecs:push --provision-infra ecs-pool
-```
-
-You will be prompted for custom names. Choose no.
-
-Set up the other AWS resources using the following commands:
-
-```sh
-terraform -chdir=infrastructure/terraform/ plan -var-file=terraform.tfvars -out=terraform.tfplan
-# Review the plan
-terraform -chdir=infrastructure/terraform/ apply "terraform.tfplan"
-# Update the docs (if applicable)
-terraform-docs markdown infrastructure/terraform/ --header-from main.tf --output-file README.md --indent 2
-````
-
 ## References
 
 - [Attack On Europe: Documenting Ukrainian Equipment Losses During The 2022 Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html)
@@ -46,3 +26,35 @@ terraform-docs markdown infrastructure/terraform/ --header-from main.tf --output
 - [Data Documentation](./docs/)
   - [Media](./docs/Media.md)
   - [Oryx](./docs/Oryx.md)
+
+## For Developers
+
+### Infrastructure
+
+The core infrastructure for this project is built on AWS.
+
+#### Prefect Generated Infrastructure
+
+```sh
+prefect work-pool create --type ecs:push --provision-infra ecs-pool
+```
+
+You will be prompted for custom names. Choose no.
+
+Once that is done, you have to update the `PrefectEcsTaskExecutionRole` with the
+AWS-managed policy `AmazonEC2ContainerRegistryReadOnly` for reading the Docker image
+from ECR.
+
+#### Self-managed Infrastructure
+
+Set up the other AWS resources using the following commands:
+
+```sh
+terraform -chdir=infrastructure/terraform/ plan -var-file=terraform.tfvars -out=terraform.tfplan
+# Review the plan
+terraform -chdir=infrastructure/terraform/ apply "terraform.tfplan"
+# Update the docs (if applicable)
+terraform-docs markdown infrastructure/terraform/ --header-from main.tf --output-file README.md --indent 2
+````
+
+[Read more](./infrastructure/terraform/README.md)
