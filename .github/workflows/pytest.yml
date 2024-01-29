@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         if: steps.setup-python.outputs.cache-hit != 'true'
         run: |
-          pipenv install --deploy --dev
+          pipenv sync --dev
       - name: Run test suite
         run: |
           pipenv run tests -v
