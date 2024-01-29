@@ -1,10 +1,11 @@
 """
 Tests for the article parser.
 """
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from borderlands.oryx_parser.article import ArticleParser
+    from borderlands.parser.article import ArticleParser
 
 
 def test_ukraine_page_parse(ukraine_article_parser: "ArticleParser"):
@@ -47,10 +48,7 @@ def test_ukraine_page_parse_result(ukraine_page_parse_result: list):
     assert all(
         isinstance(item["description"], str) for item in ukraine_page_parse_result
     )
-    assert all(
-        isinstance(item["id_"], str) and item["id_"].isnumeric()
-        for item in ukraine_page_parse_result
-    )
+    assert all(isinstance(item["id_"], int) for item in ukraine_page_parse_result)
     assert all(isinstance(item["model"], str) for item in ukraine_page_parse_result)
     assert all(
         isinstance(item["country_of_production_flag_url"], str)
@@ -81,10 +79,7 @@ def test_russia_page_parse_result(russia_page_parse_result: list):
     assert all(
         isinstance(item["description"], str) for item in russia_page_parse_result
     )
-    assert all(
-        isinstance(item["id_"], str) and item["id_"].isnumeric()
-        for item in russia_page_parse_result
-    )
+    assert all(isinstance(item["id_"], int) for item in russia_page_parse_result)
     assert all(isinstance(item["model"], str) for item in russia_page_parse_result)
     assert all(
         isinstance(item["country_of_production_flag_url"], str)

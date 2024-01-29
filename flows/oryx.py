@@ -1,6 +1,7 @@
 """
 Flow to retrieve the web pages of Russian and Ukrainian equipment.
 """
+
 import datetime
 import io
 

@@ -1,30 +1,29 @@
 """
 Flow to release the Borderlands dataset to Kaggle.
 """
+
 import datetime
 import enum
 import json
+import os
 import re
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 
-import polars as pl
 from prefect import flow, task
 from prefect.blocks.system import Secret
 from prefect.context import get_run_context
-from prefect.utilities.asyncutils import sync_compatible
-
-try:
-    from kaggle.api.kaggle_api_extended import KaggleApi
-except OSError:
-    from kaggle.api.kaggle_api_extended import KaggleApi
-
-from kaggle.rest import ApiException
 
 from borderlands.definitions import oryx
-from borderlands.schema import Dataset, Field, Tag
+from borderlands.schema import Dataset, Tag
 from borderlands.schema.schema import FieldFilter
+
+# Kaggle lib authenticates on import. Need to set the credentials right away
+os.environ["KAGGLE_USERNAME"] = Secret.load("secret-kaggle-username").get()
+os.environ["KAGGLE_KEY"] = Secret.load("secret-kaggle-key").get()
+from kaggle import KaggleApi, api  # noqa: E402
+from kaggle.rest import ApiException  # noqa: E402
 
 __project__ = Path(__file__).parent.parent
 
@@ -36,26 +35,10 @@ class DatasetStatus(enum.Enum):
     DOES_NOT_EXIST = enum.auto()
 
 
-@sync_compatible
-async def get_kaggle_authentication_config() -> dict:
-    """Get the Kaggle authentication config."""
-    return {
-        "username": (await Secret.load("secret-kaggle-username")).get(),
-        "key": (await Secret.load("secret-kaggle-key")).get(),
-    }
-
-
 def get_dataset_metadata() -> dict:
     """Get the dataset metadata."""
     with open(__project__ / "kaggle" / "dataset-metadata.json", "r") as f:
         return json.load(f)
-
-
-def get_kaggle_client() -> KaggleApi:
-    """Get a Kaggle API client."""
-    api = KaggleApi()
-    api._load_config(get_kaggle_authentication_config())
-    return api
 
 
 def update_description(metadata: dict) -> dict:
@@ -201,10 +184,10 @@ def update_kaggle_dataset(api: KaggleApi, metadata: dict, date: datetime.date):
 @flow(
     name="Release Dataset to Kaggle",
     log_prints=True,
+    timeout_seconds=600,
 )
 def release_dataset_to_kaggle():
     """Make the Kaggle dataset."""
-    api = get_kaggle_client()
     metadata = get_dataset_metadata()
     metadata = update_description(metadata)
     status = assess_dataset_status(api, metadata)
