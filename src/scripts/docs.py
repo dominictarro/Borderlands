@@ -5,6 +5,7 @@ Generate docs for the datasets.
 import re
 from pathlib import Path
 
+from borderlands.definitions import media_inventory, oryx
 from borderlands.schema.dataset import Dataset
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -49,3 +50,8 @@ def update_dataset_docs(dataset: Dataset) -> str:
     markdown = insert_to_docs(dataset, markdown)
     path.write_text(markdown)
     print(f"Updated {dataset.label} docs.\n'{path!s}'")
+
+
+if __name__ == "__main__":
+    for dataset in (oryx, media_inventory):
+        update_dataset_docs(dataset)

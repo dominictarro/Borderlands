@@ -39,3 +39,4 @@ python_version = "3.11"
 
 [scripts]
 tests = "pytest tests/"
+dataset-docs = "python src/scripts/docs.py"
