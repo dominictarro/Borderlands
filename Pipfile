@@ -29,6 +29,7 @@ pytest = "*"
 click = "*"
 prefect-github = ">=0.2.2"
 moto = {extras = ["s3"], version = "<5.0,>=3.1.16"}
+tabulate = "*"
 
 [requires]
 python_version = "3.11"

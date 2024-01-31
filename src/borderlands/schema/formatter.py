@@ -7,10 +7,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import polars as pl
+import tabulate
 
 if TYPE_CHECKING:
     from .dataset import Dataset
-    from .fields import Field
     from .schema import FieldFilter
 
 
@@ -59,119 +59,35 @@ def format_type(dtype: pl.DataType) -> str:
 
 
 class Formatter:
-    """Object to create documentation from a dataset.
+    """Mixin to generate documention for a dataset."""
 
-    Args:
-        dataset (Dataset): The dataset to generate documentation for.
-        level (int, optional): The header level of the documentation. Defaults to 2.
-    """
-
-    def __init__(self, dataset: Dataset, level: int = 2) -> None:
-        self.dataset = dataset
-        self.level = level
-        assert self.level in range(1, 5), "Level must be between in range [1, 4]."
-
-    def format(
-        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
-    ) -> str:
-        """Formats the schema into markdown.
-
-        Args:
-            schema (Schema): The schema to format.
-            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
-            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
-
-        Returns:
-            str: The formatted schema.
-        """
-        return "\n\n".join(
-            [
-                self._format_header(),
-                self._format_description(),
-                self._format_schema(include, exclude),
-            ]
-        )
-
-    def _format_header(self) -> str:
+    def _format_header(self: Dataset, level: int) -> str:
         """Formats the header of the schema.
 
         Args:
-            schema (Schema): The schema to format.
+            level (int): The level of the header.
 
         Returns:
             str: The formatted header.
         """
-        return f"{'#' * self.level} {self.dataset.label}"
-
-    def _format_description(self) -> str:
-        """Formats the description of the schema.
-
-        Args:
-            schema (Schema): The schema to format.
-
-        Returns:
-            str: The formatted description.
-        """
-        return self.dataset.description
+        return f"{'#' * level} {self.label}"
 
     def _format_schema(
-        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
+        self: Dataset,
+        include: FieldFilter | None = None,
+        exclude: FieldFilter | None = None,
     ) -> str:
-        """Formats the schema.
+        """Format the schema into markdown.
 
         Args:
-            schema (Schema): The schema to format.
             include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
             exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
 
         Returns:
             str: The formatted schema.
         """
-        return (
-            f"{'#' * (self.level + 1)} Schema"
-            + "\n\n"
-            + self._format_fields(include=include, exclude=exclude)
-        )
-
-    def _format_fields(
-        self, include: FieldFilter | None = None, exclude: FieldFilter | None = None
-    ) -> str:
-        """Formats the fields of the schema.
-
-        Args:
-            schema (Schema): The schema to format.
-            include (FieldFilter, optional): A list of conditions to require for fields to be included. Performs an OR operation.
-            exclude (FieldFilter, optional): A list of conditions to exclude fields with. Performs an OR operation.
-
-        Returns:
-            str: The formatted fields.
-        """
-        return (
-            self._create_field_header()
-            + "\n"
-            + "\n".join(
-                [
-                    self._format_field(f)
-                    for f in self.dataset.schema.iter(include=include, exclude=exclude)
-                ]
-            )
-        )
-
-    def _create_field_header(self) -> str:
-        """Creates the field header.
-
-        Returns:
-            str: The field header.
-        """
-        return "| Name | Type | Description |" "\n" "| :--- | :--- | :----------- |"
-
-    def _format_field(self, field: Field) -> str:
-        """Creates a markdown row for the `field`.
-
-        Args:
-            field (Field): The field to format.
-
-        Returns:
-            str: The formatted field.
-        """
-        return f"| {field.name} | {format_type(field.dtype)} | {field.description} |"
+        fields = [
+            {"Name": f.name, "Type": format_type(f.dtype), "Description": f.description}
+            for f in self.schema.iter(include=include, exclude=exclude)
+        ]
+        return tabulate.tabulate(fields, headers="keys", tablefmt="pipe")
