@@ -8,7 +8,7 @@ import io
 
 import polars as pl
 
-from .. import blocks
+from ..blocks import blocks
 from .formatter import Formatter
 from .schema import FieldFilter, Schema
 
