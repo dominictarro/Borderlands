@@ -1,0 +1,35 @@
+site_name: Borderlands
+site_description: The Borderlands project is a publicized collection of high-granularity datasets related to the Russo-Ukrainian War.
+repo_url: https://github.com/dominictarro/Borderlands
+repo_name: dominictarro/Borderlands
+
+
+theme:
+  name: "material"
+  features:
+    - navigation.instant
+    - navigation.tabs
+  icon:
+      repo: fontawesome/brands/github
+  palette:
+    primary: indigo
+    accent: amber
+
+extra_css:
+  - css/neoteroi-mkdocs.css
+
+markdown_extensions:
+  - admonition
+  - neoteroi.cards
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+nav:
+  - index.md
+  - About: about.md
+  - Datasets:
+    - datasets/Media Inventory.md
+    - datasets/Oryx.md
+  - License.md

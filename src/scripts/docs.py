@@ -7,7 +7,7 @@ from pathlib import Path
 
 from borderlands.schema.dataset import Dataset
 
-PROJECT_ROOT = Path(__file__).parent.parent
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 START_INDICATOR = "<!-- BEGIN SCHEMA SECTION -->"
 END_INDICATOR = "<!-- END SCHEMA SECTION -->"
@@ -18,7 +18,7 @@ SCHEMA_SECTION_REGEX: re.Pattern = re.compile(
 
 
 def insert_to_docs(dataset: Dataset, markdown: str) -> str:
-    """Add a dataset to the markdown text.
+    """Add a dataset's schema to the markdown text.
 
     Args:
         markdown (str): The markdown text to insert the dataset within.
@@ -28,10 +28,9 @@ def insert_to_docs(dataset: Dataset, markdown: str) -> str:
     """
     match: re.Match = SCHEMA_SECTION_REGEX.search(markdown)
     if match is None:
-        print(markdown)
         raise ValueError("Could not find schema section in markdown.")
     return SCHEMA_SECTION_REGEX.sub(
-        "\n\n".join((START_INDICATOR, dataset.to_markdown(), END_INDICATOR)),
+        "\n\n".join((START_INDICATOR, dataset._format_schema(), END_INDICATOR)),
         markdown,
     )
 
@@ -45,7 +44,7 @@ def update_dataset_docs(dataset: Dataset) -> str:
     Returns:
         str: The dataset documentation.
     """
-    path = PROJECT_ROOT / "docs" / f"{dataset.label}.md"
+    path = PROJECT_ROOT / "docs" / "Datasets" / f"{dataset.label}.md"
     markdown = path.read_text()
     markdown = insert_to_docs(dataset, markdown)
     path.write_text(markdown)
