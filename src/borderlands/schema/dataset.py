@@ -8,13 +8,13 @@ import io
 
 import polars as pl
 
-from .. import blocks
+from ..blocks import blocks
 from .formatter import Formatter
 from .schema import FieldFilter, Schema
 
 
 @dc.dataclass
-class Dataset:
+class Dataset(Formatter):
     """Dataset class for storing dataset information.
 
     Attributes:
@@ -64,5 +64,10 @@ class Dataset:
         Returns:
             str: The dataset described in markdown.
         """
-        f = Formatter(self, level)
-        return f.format(include=include, exclude=exclude)
+        return "\n\n".join(
+            (
+                self._format_header(level),
+                self.description,
+                self._format_schema(include, exclude),
+            )
+        )
