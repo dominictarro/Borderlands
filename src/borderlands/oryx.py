@@ -19,7 +19,7 @@ from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 from prefecto.serializers.polars import PolarsSerializer
 
-from . import blocks
+from .blocks import blocks
 from .definitions import EquipmentLoss
 from .enums import EvidenceSource
 from .parser import article, parser

@@ -16,7 +16,8 @@ from prefect import task
 from prefect_aws import S3Bucket
 from prefecto.logging import get_prefect_or_default_logger
 
-from . import blocks, enums, paths
+from . import enums, paths
+from .blocks import blocks
 from .definitions import EquipmentLoss, Media, media_inventory
 from .schema import Tag
 from .utilities import io_, web, wrappers

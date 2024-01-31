@@ -9,7 +9,8 @@ import polars as pl
 from prefect import flow, task
 from prefect.context import FlowRunContext, get_run_context
 
-from borderlands import assets, blocks, definitions
+from borderlands import assets, definitions
+from borderlands.blocks import blocks
 from borderlands.oryx import (
     alert_on_unmapped_country_flags,
     get_oryx_page,
@@ -60,6 +61,7 @@ def oryx_flow() -> str:
         str: The key the DataFrame was uploaded to.
     """
     ctx: FlowRunContext = get_run_context()
+    blocks.load()
     # Convert Pendulum to Python datetime
     dt = datetime.datetime.fromisoformat(ctx.flow_run.start_time.isoformat()).replace(
         microsecond=0
