@@ -5,7 +5,8 @@ import polars as pl
 from prefect import flow, task
 from prefect.context import get_run_context
 
-from borderlands import blocks, definitions
+from borderlands import definitions
+from borderlands.blocks import blocks
 from borderlands.media import (
     create_inventory_key,
     create_media_inventory_from_oryx,
@@ -61,6 +62,7 @@ def download_oryx(path: str) -> pl.DataFrame:
 def download_media(loss_key: str) -> str:
     """Download the media from the media bucket."""
     ctx = get_run_context()
+    blocks.load()
     # Convert Pendulum to Python datetime
     dt = datetime.datetime.fromisoformat(ctx.flow_run.start_time.isoformat()).replace(
         microsecond=0

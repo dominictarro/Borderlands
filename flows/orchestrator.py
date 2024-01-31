@@ -12,7 +12,8 @@ try:
 except ImportError:
     from flows import media, oryx, publish
 
-from borderlands import blocks, definitions
+from borderlands import definitions
+from borderlands.blocks import blocks
 from borderlands.schema import Dataset
 
 
@@ -35,6 +36,7 @@ def release_dataset(path: str, dataset: Dataset) -> str:
 )
 def borderlands_flow():
     """Flow to orchestrate the Oryx subflows."""
+    blocks.load()
     oryx_key = oryx.oryx_flow()
     oryx_release = release_dataset.submit(
         oryx_key,

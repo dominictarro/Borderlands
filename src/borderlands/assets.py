@@ -10,7 +10,7 @@ from typing import Dict
 import polars as pl
 from prefect import task
 
-from . import blocks
+from .blocks import blocks
 
 
 def get_asset(asset_name: str) -> bytes:
