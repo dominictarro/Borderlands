@@ -4,8 +4,9 @@
 
 <a href="https://www.kaggle.com/dominictarro/borderlands" target="_blank"><img src="https://img.shields.io/badge/Kaggle-20BEFF?style=for-the-badge&logo=Kaggle&logoColor=white"></a>
 <a href="https://patreon.com/tarrodot" target="_blank"><img src="https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white"></a>
+<a href="https://dominictarro.github.io/Borderlands/" target="_blank"><img src="https://img.shields.io/badge/Documentation-indigo?style=for-the-badge&logo=gitbook&logoColor=white"></a>
 
-*ETL for Russo-Ukrainian war data.*
+The *Borderlands* project is a publicized collection of high-granularity datasets related to the Russo-Ukrainian War.
 
 ## About
 
@@ -23,9 +24,6 @@ The JSON form of the Oryx dataset is available for download on [Kaggle](https://
 - [List Of Aircraft Losses During The Russian Invasion Of Ukraine](https://www.oryxspioenkop.com/2022/03/list-of-aircraft-losses-during-2022.html)
 - [ISO Codes](https://www.iso.org/obp/ui/#home)
 - [Infrastructure](./infrastructure/README.md)
-- [Data Documentation](./docs/)
-  - [Media](./docs/Media.md)
-  - [Oryx](./docs/Oryx.md)
 
 ## For Developers
 
