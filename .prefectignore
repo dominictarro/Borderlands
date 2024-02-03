@@ -1,19 +1,15 @@
 # Ignore files unused by the flows
 .github/
 assets/
-blocks/
-deployments/
 docs/
 infrastructure/
-src/scripts/
 tests/
 .git*
 .pre-commit-config.yaml
 .ruff.toml
-CHANGELOG.md
 Dockerfile
 LICENSE
-Makefile
 Pipfile*
+prefect.yaml
 pyproject.toml
 README.md
