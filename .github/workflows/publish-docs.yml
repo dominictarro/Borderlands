@@ -33,10 +33,10 @@ jobs:
         if: steps.setup-python.outputs.cache-hit != 'true'
         run: |
           pipenv sync --dev
-          pipenv run pip install -e .
 
       - name: Update dataset files
         run: |
+          pipenv run pip install -e .
           pipenv run borderlands docs oryx
           pipenv run borderlands docs media-inventory
 
