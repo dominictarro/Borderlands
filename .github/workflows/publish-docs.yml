@@ -37,7 +37,8 @@ jobs:
 
       - name: Update dataset files
         run: |
-          pipenv run dataset-docs
+          pipenv run borderlands docs oryx
+          pipenv run borderlands docs media-inventory
 
       - name: Build docs
         run: |

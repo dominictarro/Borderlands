@@ -13,6 +13,9 @@ requires-python = ">=3.11"
 dependencies = []
 license.file = "LICENSE"
 
+[project.scripts]
+borderlands = "borderlands.cli:borderlands"
+
 [project.urls]
 Code = "https://github.com/dominictarro/borderlands"
 Documentation = "https://github.com/dominictarro/borderlands/blob/main/README.md"
