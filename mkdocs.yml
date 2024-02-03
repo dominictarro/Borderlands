@@ -28,8 +28,8 @@ markdown_extensions:
 
 nav:
   - index.md
-  - About: about.md
   - Datasets:
     - Datasets/Media Inventory.md
     - Datasets/Oryx.md
+  - About: about.md
   - License.md
