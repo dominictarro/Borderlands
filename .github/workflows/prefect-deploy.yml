@@ -2,14 +2,16 @@ name: Deploy Prefect Deployment
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - "Pipfile"
-      - "Pipfile.lock"
-      - "prefect.yaml"
-      - "src/borderlands/"
-      - ".github/workflows/prefect-deploy.yml"
+    inputs:
+      deployment-names:
+        description:
+          Comma-separated list of names of your Prefect deployments.
+
+          example 'deployment1,deployment2'
+
+          Setting to 'all' will deploy all deployments.
+        required: true
+        default: all
 
 jobs:
     deploy:
@@ -46,4 +48,12 @@ jobs:
 
             - name: Deploy Prefect Flow
               run: |
-                pipenv run prefect --no-prompt deploy --all --version ${{ github.sha }}
+                if [ ${{ inputs.deployment-names }} == "all" ];
+                then
+                  pipenv run prefect --no-prompt deploy --all --version ${{ github.sha }}
+                else
+                  IFS=',' read -ra deployment_names <<< "${{ inputs.deployment-names }}"
+                  for name in "${deployment_names[@]}"; do
+                    prefect --no-prompt deploy -n "$name" --version ${{ github.sha }}
+                  done
+                fi
