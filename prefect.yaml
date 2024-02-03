@@ -41,7 +41,7 @@ deployments:
     timezone: EST
     day_or: true
   flow_name: null
-  entrypoint: "flows/orchestrator.py:borderlands_flow"
+  entrypoint: "src/flows/orchestrator.py:borderlands_flow"
   parameters: {}
   work_pool:
     name: ecs
