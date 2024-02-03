@@ -11,10 +11,10 @@ The *Borderlands* project is a publicized collection of high-granularity dataset
 - title: Media Inventory
   content: Media files from the Oryx dataset.
   image: ./_static/gallery.png
-  url: ./datasets/Media%20Inventory.md
+  url: ./Datasets/Media%20Inventory.md
 - title: Oryx
   content: Equipment losses in the Russo-Ukrainian War.
   image: ./_static/bracket-curly.png
-  url: ./datasets/Oryx.md
+  url: ./Datasets/Oryx.md
 
 ::/cards::
