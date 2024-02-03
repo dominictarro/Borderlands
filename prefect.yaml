@@ -32,6 +32,7 @@ pull:
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
 - name: "Daily Oryx Scrape"
+  # This should be set during deployments
   version: null
   tags: []
   description: "Scrapes the latest data from Oryx, downloads the images, and releases a new version of the dataset to Kaggle."

@@ -1,0 +1,49 @@
+name: Deploy Prefect Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - "Pipfile"
+      - "Pipfile.lock"
+      - "prefect.yaml"
+      - "src/borderlands/"
+      - ".github/workflows/prefect-deploy.yml"
+
+jobs:
+    deploy:
+        name: Deploy Prefect Deployment
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out repository code
+              uses: actions/checkout@v4
+
+            - name: Setup Python
+              id: setup-python
+              uses: actions/setup-python@v4
+              with:
+                python-version: "3.11"
+                cache: "pipenv"
+
+            - name: Install pipenv
+              run: |
+                python -m pip install --upgrade pipenv wheel
+
+            - name: Install dependencies
+              if: steps.setup-python.outputs.cache-hit != 'true'
+              run: |
+                pipenv sync --dev
+
+            - name: Install package
+              run: |
+                pipenv run pip install -e .
+
+            - name: Login to Prefect Cloud
+              run: |
+                pipenv run prefect cloud login -k ${{ secrets.PREFECT_CLOUD_API_KEY }} -w ${{ secrets.PREFECT_CLOUD_HANDLE }}
+
+            - name: Deploy Prefect Flow
+              run: |
+                pipenv run prefect --no-prompt deploy --all --version ${{ github.sha }}
