@@ -32,6 +32,7 @@ pull:
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
 - name: "Daily Oryx Scrape"
+  # This should be set during deployments
   version: null
   tags: []
   description: "Scrapes the latest data from Oryx, downloads the images, and releases a new version of the dataset to Kaggle."
@@ -41,7 +42,7 @@ deployments:
     timezone: EST
     day_or: true
   flow_name: null
-  entrypoint: "flows/orchestrator.py:borderlands_flow"
+  entrypoint: "src/flows/orchestrator.py:borderlands_flow"
   parameters: {}
   work_pool:
     name: ecs

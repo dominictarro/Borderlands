@@ -1,0 +1,59 @@
+name: Deploy Prefect Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment-names:
+        description:
+          Comma-separated list of names of your Prefect deployments.
+
+          example 'deployment1,deployment2'
+
+          Setting to 'all' will deploy all deployments.
+        required: true
+        default: all
+
+jobs:
+    deploy:
+        name: Deploy Prefect Deployment
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out repository code
+              uses: actions/checkout@v4
+
+            - name: Setup Python
+              id: setup-python
+              uses: actions/setup-python@v4
+              with:
+                python-version: "3.11"
+                cache: "pipenv"
+
+            - name: Install pipenv
+              run: |
+                python -m pip install --upgrade pipenv wheel
+
+            - name: Install dependencies
+              if: steps.setup-python.outputs.cache-hit != 'true'
+              run: |
+                pipenv sync --dev
+
+            - name: Install package
+              run: |
+                pipenv run pip install -e .
+
+            - name: Login to Prefect Cloud
+              run: |
+                pipenv run prefect cloud login -k ${{ secrets.PREFECT_CLOUD_API_KEY }} -w ${{ secrets.PREFECT_CLOUD_HANDLE }}
+
+            - name: Deploy Prefect Flow
+              run: |
+                if [ ${{ inputs.deployment-names }} == "all" ];
+                then
+                  pipenv run prefect --no-prompt deploy --all --version ${{ github.sha }}
+                else
+                  IFS=',' read -ra deployment_names <<< "${{ inputs.deployment-names }}"
+                  for name in "${deployment_names[@]}"; do
+                    prefect --no-prompt deploy -n "$name" --version ${{ github.sha }}
+                  done
+                fi
