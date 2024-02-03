@@ -41,7 +41,7 @@ jobs:
 
       - name: Build docs
         run: |
-          pipenv run mkdocs build
+          pipenv run mkdocs build --site-dir site
 
       - name: Publish docs
         uses: JamesIves/github-pages-deploy-action@v4.4.2

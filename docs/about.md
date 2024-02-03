@@ -8,13 +8,13 @@ This dataset was curated to provide quality data to observers of the Russo-Ukrai
 
 - title: Media dates
   content: Image dates extracted with OCR, Postimg web pages, and X.
-  image: _static/calendar.png
+  image: ./_static/calendar.png
 - title: Media publication
   content: Publish the media dataset to Kaggle.
-  image: _static/cloud-computing.png
+  image: ./_static/cloud-computing.png
 - title: X media source
   content: Download media from X.
-  image: _static/twitter.png
+  image: ./_static/twitter.png
 
 ::/cards::
 
