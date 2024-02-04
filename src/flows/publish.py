@@ -26,7 +26,7 @@ os.environ["KAGGLE_KEY"] = Secret.load("secret-kaggle-key").get()
 from kaggle import KaggleApi, api  # noqa: E402
 from kaggle.rest import ApiException  # noqa: E402
 
-__project__ = Path(__file__).parent.parent
+__project__ = Path(__file__).parent.parent.parent
 
 
 class DatasetStatus(enum.Enum):
