@@ -20,7 +20,7 @@ pipenv = "*"
 pre-commit = "*"
 flake8 = "*"
 black = "*"
-isort = {extras = ["pyproject"], version = "*"}
+isort = "*"
 commitizen = "*"
 pygit2 = "*"
 python-dotenv = "*"
