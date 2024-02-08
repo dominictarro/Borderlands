@@ -89,8 +89,10 @@ data "aws_iam_policy_document" "dev_rds_access" {
         actions = [
             "rds-db:connect"
         ]
+        effect = "Allow"
+        // This is a distinct ARN purely for granting IAM users authentication permissions with the cluster
         resources = [
-            aws_rds_cluster.borderlands_dev.arn
+            "arn:aws:rds-db:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:dbuser:${aws_rds_cluster.borderlands_dev.cluster_resource_id}/${aws_iam_user.prefect.name}"
         ]
     }
 }
