@@ -29,11 +29,11 @@ resource "aws_iam_role" "rds" {
 // ------------------------------
 // RDS Cluster
 
-resource "aws_rds_cluster" "borderlands_prod" {
+resource "aws_rds_cluster" "borderlands_dev" {
     // Cluster config
-    cluster_identifier = "borderlands-prod"
+    cluster_identifier = "borderlands-dev"
     engine = "aurora-mysql"
-    engine_version = "8.0.mysql_aurora.3.02.0"
+    engine_version = "8.0.mysql_aurora.3.04.1"
 
     // DB instance
     database_name = "borderlands"
@@ -50,33 +50,68 @@ resource "aws_rds_cluster" "borderlands_prod" {
     ]
 
     // Cluster maintenance
-    backtrack_window = 7
     apply_immediately = true
     skip_final_snapshot = true
+    copy_tags_to_snapshot = true
 
     // Network
     vpc_security_group_ids = var.security_group_ids
     network_type = "IPV4"
-
-    // Logs
-    enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
 
     tags = {
         project = "borderlands"
     }
 }
 
+resource "aws_rds_cluster_instance" "instance_1" {
+    cluster_identifier = aws_rds_cluster.borderlands_dev.cluster_identifier
+    identifier = "borderlands-dev-instance-1"
+    instance_class = "db.t3.medium"
+    engine = "aurora-mysql"
+    engine_version = "8.0.mysql_aurora.3.04.1"
+
+    // Config
+    promotion_tier = 1
+
+    // Network
+    publicly_accessible = true
+
+    tags = {
+        project = "borderlands"
+    }
+}
+
+// ------------------------------
+// RDS IAM user permissions
+
+data "aws_iam_policy_document" "dev_rds_access" {
+    statement {
+        actions = [
+            "rds-db:connect"
+        ]
+        resources = [
+            aws_rds_cluster.borderlands_dev.arn
+        ]
+    }
+}
+
+resource "aws_iam_user_policy" "prefect_user_dev_rds_access" {
+    name   = "dev-rds-access"
+    user   = aws_iam_user.prefect.name
+    policy = data.aws_iam_policy_document.dev_rds_access.json
+}
+
 output "rds_cluster_endpoint" {
     description = "The endpoint of the RDS cluster."
-    value = aws_rds_cluster.borderlands_prod.endpoint  
+    value = aws_rds_cluster.borderlands_dev.endpoint  
 }
 
 output "rds_cluster_reader_endpoint" {
     description = "The reader endpoint of the RDS cluster."
-    value = aws_rds_cluster.borderlands_prod.reader_endpoint
+    value = aws_rds_cluster.borderlands_dev.reader_endpoint
 }
 
 output "rds_hosted_zone_id" {
     description = "The hosted zone ID of the RDS cluster."
-    value = aws_rds_cluster.borderlands_prod.hosted_zone_id
+    value = aws_rds_cluster.borderlands_dev.hosted_zone_id
 }
