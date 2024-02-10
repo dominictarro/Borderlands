@@ -112,7 +112,9 @@ async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
 
 
 class Status(enum.Enum):
-    """Statuses the equipment may be in."""
+    """Statuses the equipment may be in. Names convert to model names by prefixing with 'is_' like
+    `is_abandoned`.
+    """
 
     ABANDONED = "abandoned"
     CAPTURED = "captured"
@@ -215,31 +217,11 @@ def assign_status(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
                 pl.col("description").str.contains(keyword) for keyword in keywords
             )
         )
-        .then(pl.lit(status.value))
-        .otherwise(pl.lit(None))
-        .alias(status.value)
+        .then(pl.lit(True))
+        .otherwise(pl.lit(False))
+        .alias(f"is_{status.value}")
         for status, keywords in STATUS_KEYWORD_MAP.items()
     )
-
-    status_columns = [status.value for status in Status._member_map_.values()]
-    TMP = "tmp"
-    # Combine the status columns into a single column
-    lf = lf.with_columns(
-        # Concatenate the status columns into a list
-        pl.concat_list(pl.col(status) for status in status_columns)
-        # Use only unique values
-        #  - This is only really applies to nulls. This way there is only one null in the list. Important for next.
-        .list.unique()
-        # Sort the list so that nulls are first
-        .list.sort().alias(TMP)
-    ).with_columns(
-        # If the first element of the list is null, drop it
-        pl.when(pl.col(TMP).list.first().is_null())
-        .then(pl.col(TMP).list.slice(1, None))
-        .otherwise(pl.col(TMP))
-        .alias("status")
-    )
-    lf = lf.drop(status_columns + [TMP])
     return lf
 
 
