@@ -18,7 +18,7 @@ from prefecto.logging import get_prefect_or_default_logger
 
 from . import enums, paths
 from .blocks import blocks
-from .definitions import EquipmentLoss, Media, media_inventory
+from .definitions import Media, media_inventory
 from .schema import Tag
 from .utilities import io_, web, wrappers
 
@@ -48,12 +48,12 @@ def create_media_inventory_from_oryx(df: pl.DataFrame) -> str:
 
     # Get the media from the evidence_url
     lf = (
-        lf.groupby(EquipmentLoss.url_hash.name)
+        lf.groupby("url_hash")
         .agg(
-            EquipmentLoss.evidence_url.col.first().alias(Media.url.name),
-            EquipmentLoss.evidence_source.col.first().alias(Media.evidence_source.name),
+            pl.col("evidence_url").first().alias("url"),
+            pl.col("evidence_source").first().alias("evidence_source"),
         )
-        .rename({EquipmentLoss.url_hash.name: Media.url_hash.name})
+        .rename({"url_hash": "url_hash"})
     )
     # Fill the others with None
     null_fields = list(Media.iter(exclude=[Tag.inherited, Tag.dimension]))
@@ -126,8 +126,8 @@ def create_media_key(ctx: dict) -> str:
         str: The media key.
     """
     return (
-        f"{ctx[Media.evidence_source.name]}/"
-        f"{ctx[Media.url_hash.name]}{ctx[Media.file_type.name] or '.unknown'}"
+        f"{ctx['evidence_source']}/"
+        f"{ctx['url_hash']}{ctx['file_type'] or '.unknown'}"
     )
 
 
@@ -147,8 +147,8 @@ def get_downloaded_and_not_downloaded(
     Returns:
         tuple[pl.DataFrame, pl.DataFrame]: The downloaded and not downloaded dataframes.
     """
-    downloaded = df.filter(Media.media_key.col.is_not_null())
-    not_downloaded = df.filter(Media.media_key.col.is_null())
+    downloaded = df.filter(pl.col("media_key").is_not_null())
+    not_downloaded = df.filter(pl.col("media_key").is_null())
     return downloaded, not_downloaded
 
 
@@ -173,31 +173,29 @@ async def download_file(
     try:
         try:
             await sem.acquire()
-            url = ctx[Media.url.name]
+            url = ctx["url"]
 
             async with client.stream("GET", url) as r:
                 r.raise_for_status()
                 # Infer the file type and with that the media type
-                ctx[Media.file_type.name] = io_.infer_media_extension(
-                    ctx[Media.url.name], r.headers
-                )
-                ctx[Media.media_type.name] = (
+                ctx["file_type"] = io_.infer_media_extension(ctx["url"], r.headers)
+                ctx["media_type"] = (
                     enums.MediaType.IMAGE.value
-                    if ctx[Media.file_type.name]
+                    if ctx["file_type"]
                     else enums.MediaType.UNKNOWN.value
                 )
                 path = create_media_key(ctx)
                 with tempfile.SpooledTemporaryFile(
-                    prefix=ctx[Media.url_hash.name], suffix=".partial"
+                    prefix=ctx["url_hash"], suffix=".partial"
                 ) as fo:
                     async for chunk in r.aiter_bytes():
                         fo.write(chunk)
                     fo.seek(0)
                     # Assign the media key and type
-                    ctx[Media.media_key.name] = (
+                    ctx["media_key"] = (
                         await blocks.media_bucket.upload_from_file_object(fo, path)
                     )
-                    ctx[Media.as_of_date.name] = datetime.datetime.utcnow()
+                    ctx["as_of_date"] = datetime.datetime.utcnow()
         finally:
             sem.release()
     except httpx.HTTPStatusError as e:
@@ -253,7 +251,7 @@ def evidence_source_handler(
             logger = get_prefect_or_default_logger()
             logger.info(f"Searching for {evidence_source.value} media to download")
 
-            df = df.filter(Media.evidence_source.col == evidence_source.value)
+            df = df.filter(pl.col("evidence_source") == evidence_source.value)
             downloaded, not_downloaded = get_downloaded_and_not_downloaded(df)
 
             if not_downloaded.shape[0] == 0:
@@ -309,10 +307,7 @@ async def download_postimg(contexts: list[dict], concurrency: int = 10):
         sem = anyio.Semaphore(concurrency)
         async with anyio.create_task_group() as tg:
             for ctx in contexts:
-                if (
-                    ctx[Media.evidence_source.name]
-                    == enums.EvidenceSource.POST_IMG.value
-                ):
+                if ctx["evidence_source"] == enums.EvidenceSource.POST_IMG.value:
                     tg.start_soon(download_file, client, ctx, sem)
 
 
@@ -327,7 +322,7 @@ async def download(df: pl.DataFrame) -> pl.DataFrame:
         pl.DataFrame: The dataframe with the media keys.
     """
     logger = get_prefect_or_default_logger()
-    evidence_sources = df[Media.evidence_source.name].unique().to_list()
+    evidence_sources = df["evidence_source"].unique().to_list()
     results: dict[str, pl.DataFrame] = {}
     async with anyio.create_task_group() as tg:
         for evidence_source in evidence_sources:
@@ -337,6 +332,6 @@ async def download(df: pl.DataFrame) -> pl.DataFrame:
             else:
                 logger.warning(f"No handler for {evidence_source}")
                 results[evidence_source] = df.filter(
-                    Media.evidence_source.col == evidence_source
+                    pl.col("evidence_source") == evidence_source
                 )
     return pl.concat(results.values())
