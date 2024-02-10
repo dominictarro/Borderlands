@@ -21,7 +21,6 @@ from prefecto.serializers.polars import PolarsSerializer
 
 from .blocks import blocks
 from .enums import EvidenceSource
-from .models import EquipmentLoss
 from .parser import article, parser
 from .utilities import web, wrappers
 
@@ -190,8 +189,16 @@ def parse_oryx_web_page(page: str, country: str | None = None) -> pl.DataFrame:
     generator = parser.OryxParser(soup, multi=country is None, logger=logger).parse(
         data_section_index
     )
-    df = pl.from_dicts(generator, schema=EquipmentLoss.polars_schema())
+    df = pl.from_dicts(generator)
     logger.info(f"Found {len(df)} equipment losses for {country}")
+
+    df = df.rename(
+        {
+            "description": "oryx_description",
+            "evidence_url": "oryx_evidence_url",
+            "id_": "oryx_id",
+        }
+    )
 
     if country is not None:
         # Complete the country column
@@ -207,14 +214,14 @@ def assign_status(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
     """Assigns statuses to the equipment losses.
 
     Requires:
-    - `EquipmentLoss.description`
+    - `EquipmentLoss.oryx_description`
     """
     logger.info("Assigning statuses to equipment losses")
     lf = lf.with_columns(
         pl.when(
             # Check if the description contains any of the keywords
             pl.any_horizontal(
-                pl.col("description").str.contains(keyword) for keyword in keywords
+                pl.col("oryx_description").str.contains(keyword) for keyword in keywords
             )
         )
         .then(pl.lit(True))
@@ -334,23 +341,27 @@ def resolve_aircraft_and_naval_page_updates(
         )
     )
 
-    lf = (
-        lf.join(
-            lookup,
-            left_on=[
-                "category",
-                "model",
-            ],
-            right_on=["old_category", "model"],
-            how="left",
-        )
-        .with_columns(
-            pl.when(pl.col("new_category").is_not_null())
-            .then(pl.col("new_category"))
-            .otherwise(pl.col("category"))
-            .alias("category"),
-        )
-        .drop("new_category")
+    lf = lf.join(
+        lookup,
+        left_on=[
+            "category",
+            "model",
+        ],
+        right_on=["old_category", "model"],
+        how="left",
+    ).with_columns(
+        pl.when(pl.col("new_category").is_not_null())
+        .then(pl.col("new_category"))
+        .otherwise(pl.col("category"))
+        .alias("category"),
+    )
+
+    lf = lf.drop(
+        "categories",
+        "from_original",
+        "new_category",
+        "pages_shared_on",
+        "to_replace",
     )
     return lf
 
@@ -460,5 +471,29 @@ def pre_process_dataframe(
         )
         .collect()
         .lazy()
+    )
+
+    # Order columns
+    lf = lf.select(
+        "country",
+        "category",
+        "model",
+        "url_hash",
+        "case_id",
+        "is_abandoned",
+        "is_captured",
+        "is_damaged",
+        "is_destroyed",
+        "is_scuttled",
+        "is_stripped",
+        "is_sunk",
+        "is_raised",
+        "oryx_evidence_url",
+        "country_of_production",
+        "evidence_source",
+        "oryx_description",
+        "oryx_id",
+        "country_of_production_flag_url",
+        "as_of_date",
     )
     return lf.collect()

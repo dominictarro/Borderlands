@@ -9,7 +9,7 @@ import polars as pl
 from prefect import flow, task
 from prefect.context import FlowRunContext, get_run_context
 
-from borderlands import assets, definitions
+from borderlands import assets
 from borderlands.blocks import blocks
 from borderlands.oryx import (
     alert_on_unmapped_country_flags,
@@ -33,8 +33,13 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
         str: The key the DataFrame was uploaded to.
     """
     key = create_oryx_key(dt, ext="parquet")
-    df = df.select(definitions.EquipmentLoss.columns())
-    df = df.sort(definitions.EquipmentLoss.columns(include=[definitions.Tag.dimension]))
+    df = df.sort(
+        "country",
+        "category",
+        "model",
+        "url_hash",
+        "case_id",
+    )
     with io.BytesIO() as buffer:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)
