@@ -20,8 +20,8 @@ from prefecto.logging import get_prefect_or_default_logger
 from prefecto.serializers.polars import PolarsSerializer
 
 from .blocks import blocks
-from .definitions import EquipmentLoss
 from .enums import EvidenceSource
+from .models import EquipmentLoss
 from .parser import article, parser
 from .utilities import web, wrappers
 
@@ -64,8 +64,8 @@ async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
     """
     logger = get_prefect_or_default_logger()
     unmapped: dict[str, str | int] = (
-        df.filter(EquipmentLoss.country_of_production.col.is_null())[
-            EquipmentLoss.country_of_production_flag_url.name
+        df.filter(pl.col("country_of_production").is_null())[
+            "country_of_production_flag_url"
         ]
         .value_counts()
         .to_dicts()
@@ -73,9 +73,7 @@ async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
 
     if unmapped:
         # Format the sections
-        urls = [
-            case[EquipmentLoss.country_of_production_flag_url.name] for case in unmapped
-        ]
+        urls = [case["country_of_production_flag_url"] for case in unmapped]
         n, affected = len(urls), sum([case["counts"] for case in unmapped])
         logger.warning(
             f"Found {n} unmapped country of production flags affecting {affected} records."
@@ -190,13 +188,13 @@ def parse_oryx_web_page(page: str, country: str | None = None) -> pl.DataFrame:
     generator = parser.OryxParser(soup, multi=country is None, logger=logger).parse(
         data_section_index
     )
-    df = pl.from_dicts(generator, schema=EquipmentLoss.schema())
+    df = pl.from_dicts(generator, schema=EquipmentLoss.polars_schema())
     logger.info(f"Found {len(df)} equipment losses for {country}")
 
     if country is not None:
         # Complete the country column
         df = df.with_columns(
-            pl.lit(country).alias(EquipmentLoss.country.name),
+            pl.lit(country).alias("country"),
         )
     return df
 
@@ -214,8 +212,7 @@ def assign_status(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
         pl.when(
             # Check if the description contains any of the keywords
             pl.any_horizontal(
-                EquipmentLoss.description.col.str.contains(keyword)
-                for keyword in keywords
+                pl.col("description").str.contains(keyword) for keyword in keywords
             )
         )
         .then(pl.lit(status.value))
@@ -240,7 +237,7 @@ def assign_status(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
         pl.when(pl.col(TMP).list.first().is_null())
         .then(pl.col(TMP).list.slice(1, None))
         .otherwise(pl.col(TMP))
-        .alias(EquipmentLoss.status.name)
+        .alias("status")
     )
     lf = lf.drop(status_columns + [TMP])
     return lf
@@ -259,9 +256,9 @@ def assign_country_of_production(
     logger.info("Assigning country of production flags to equipment losses")
 
     lf = lf.with_columns(
-        EquipmentLoss.country_of_production_flag_url.col.map_dict(mapper).alias(
-            EquipmentLoss.country_of_production.name
-        )
+        pl.col("country_of_production_flag_url")
+        .map_dict(mapper)
+        .alias("country_of_production")
     )
     return lf
 
@@ -276,9 +273,10 @@ def assign_evidence_source(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.La
     """
     logger.info("Assigning evidence sources to equipment losses")
     lf = lf.with_columns(
-        EquipmentLoss.evidence_url.col.apply(lambda x: urlparse(x).netloc)
+        pl.col("oryx_evidence_url")
+        .apply(lambda x: urlparse(x).netloc)
         .map_dict(DOMAIN_SOURCE_MAP)
-        .alias(EquipmentLoss.evidence_source.name)
+        .alias("evidence_source")
     )
     return lf
 
@@ -293,9 +291,9 @@ def calculate_url_hash(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFr
     """
     logger.info("Calculating URL hashes")
     lf = lf.with_columns(
-        EquipmentLoss.evidence_url.col.apply(
-            lambda url: hashlib.sha256(url.encode("utf-8")).hexdigest()
-        ).alias(EquipmentLoss.url_hash.name)
+        pl.col("oryx_evidence_url")
+        .apply(lambda url: hashlib.sha256(url.encode("utf-8")).hexdigest())
+        .alias("url_hash")
     )
     return lf
 
@@ -317,11 +315,11 @@ def resolve_aircraft_and_naval_page_updates(
     """Removes aircraft and naval losses that exist on the new pages."""
     agg = (
         lf.groupby(
-            EquipmentLoss.country.name,
-            EquipmentLoss.model.name,
-            EquipmentLoss.url_hash.name,
+            "country",
+            "model",
+            "url_hash",
         )
-        .agg(EquipmentLoss.category.col.unique().alias("categories"))
+        .agg(pl.col("category").unique().alias("categories"))
         .with_columns(
             (
                 pl.col("categories").list.contains(pl.lit("Aircraft"))
@@ -339,9 +337,9 @@ def resolve_aircraft_and_naval_page_updates(
     lf = lf.join(
         to_replace,
         on=[
-            EquipmentLoss.country.name,
-            EquipmentLoss.model.name,
-            EquipmentLoss.url_hash.name,
+            "country",
+            "model",
+            "url_hash",
         ],
         how="left",
     ).filter(
@@ -350,7 +348,7 @@ def resolve_aircraft_and_naval_page_updates(
         pl.col("to_replace").is_null()
         | (
             pl.col("to_replace").is_not_null()
-            & EquipmentLoss.category.col.is_in(["Aircraft", "Naval Ships"]).is_not()
+            & pl.col("category").is_in(["Aircraft", "Naval Ships"]).is_not()
         )
     )
 
@@ -358,8 +356,8 @@ def resolve_aircraft_and_naval_page_updates(
         lf.join(
             lookup,
             left_on=[
-                EquipmentLoss.category.name,
-                EquipmentLoss.model.name,
+                "category",
+                "model",
             ],
             right_on=["old_category", "model"],
             how="left",
@@ -368,7 +366,7 @@ def resolve_aircraft_and_naval_page_updates(
             pl.when(pl.col("new_category").is_not_null())
             .then(pl.col("new_category"))
             .otherwise(pl.col("category"))
-            .alias(EquipmentLoss.category.name),
+            .alias("category"),
         )
         .drop("new_category")
     )
@@ -399,12 +397,14 @@ def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFra
     To ensure that the two cases are not conflated, the case ID is used to discriminate between the two.
     """
     logger.info("Calculating case IDs")
-    lf = lf.with_columns(pl.lit(1).alias(EquipmentLoss.case_id.name)).with_columns(
-        EquipmentLoss.case_id.col.cumsum().over(
-            EquipmentLoss.country.name,
-            EquipmentLoss.category.name,
-            EquipmentLoss.model.name,
-            EquipmentLoss.url_hash.name,
+    lf = lf.with_columns(pl.lit(1).alias("case_id")).with_columns(
+        pl.col("case_id")
+        .cumsum()
+        .over(
+            "country",
+            "category",
+            "model",
+            "url_hash",
         ),
     )
     return lf
@@ -448,7 +448,7 @@ def pre_process_dataframe(
     # Add the as of date
     lf = (
         lf.with_columns(
-            pl.lit(as_of_date, dtype=pl.Datetime).alias(EquipmentLoss.as_of_date.name),
+            pl.lit(as_of_date, dtype=pl.Datetime).alias("as_of_date"),
         )
         .collect()
         .lazy()
@@ -457,10 +457,10 @@ def pre_process_dataframe(
     # Clean strings
     lf = (
         lf.with_columns(
-            EquipmentLoss.category.col.str.strip(),
-            EquipmentLoss.model.col.str.strip(),
-            EquipmentLoss.evidence_url.col.str.strip(),
-            EquipmentLoss.country_of_production_flag_url.col.str.strip(),
+            pl.col("category").str.strip(),
+            pl.col("model").str.strip(),
+            pl.col("oryx_evidence_url").str.strip(),
+            pl.col("country_of_production_flag_url").str.strip(),
         )
         .collect()
         .lazy()

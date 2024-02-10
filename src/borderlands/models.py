@@ -4,13 +4,14 @@ Database models for the datasets.
 
 import datetime
 
+import polars as pl
 from sqlmodel import Field, SQLModel
 
-from borderlands.enums import EvidenceSource, LossDateInferenceMethod
+from borderlands.enums import EvidenceSource
 
 
 class EquipmentLoss(SQLModel, table=True):
-    """Denormalized model for equipment losses."""
+    """Data model for the equipment loss dataset."""
 
     # Dimensions
     country: str = Field(
@@ -91,14 +92,6 @@ class EquipmentLoss(SQLModel, table=True):
         title="Evidence Source",
         description="The source the Oryx loss references as evidence of the status.",
     )
-    date_of_loss: datetime.date | None = Field(
-        None,
-        title="Date of Loss",
-        description=(
-            "The inferred date of the equipment loss. See `date_loss_inference_method` for the "
-            "method used to generate this value."
-        ),
-    )
 
     # Source context
     country_of_production_flag_url: str = Field(
@@ -120,14 +113,38 @@ class EquipmentLoss(SQLModel, table=True):
         title="Oryx Evidence URL",
         description="The URL to the Oryx cites for the equipment loss.",
     )
-    date_loss_inference_method: LossDateInferenceMethod | None = Field(
-        None,
-        title="Date Loss Inference Method",
-        description="The ID of the method used to infer the date of the equipment loss.",
-    )
     created_on: datetime.datetime = Field(
         title="As of Date",
         description="The date the row was added to the dataset.",
         default_factory=datetime.datetime.now,
         nullable=False,
     )
+
+    @classmethod
+    def polars_schema(cls):
+        """Returns the Polars schema for the model."""
+        return dict(
+            country=pl.Utf8,
+            category=pl.Utf8,
+            model=pl.Utf8,
+            url_hash=pl.Utf8,
+            case_id=pl.Int32,
+            is_abandoned=pl.Boolean,
+            is_captured=pl.Boolean,
+            is_damaged=pl.Boolean,
+            is_destroyed=pl.Boolean,
+            is_scuttled=pl.Boolean,
+            is_stripped=pl.Boolean,
+            is_sunk=pl.Boolean,
+            is_raised=pl.Boolean,
+            evidence_url=pl.Utf8,
+            country_of_production=pl.Utf8,
+            evidence_source=pl.Utf8,
+            date_of_loss=pl.Date,
+            country_of_production_flag_url=pl.Utf8,
+            oryx_description=pl.Utf8,
+            oryx_id=pl.Int32,
+            oryx_evidence_url=pl.Utf8,
+            date_loss_inference_method=pl.Utf8,
+            created_on=pl.Datetime,
+        )
