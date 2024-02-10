@@ -19,3 +19,7 @@ class MediaType(enum.Enum):
     VIDEO = "video"
     GIF = "gif"
     UNKNOWN = "unknown"
+
+
+class LossDateInferenceMethod(enum.StrEnum):
+    """The method used to infer the date of the equipment loss."""
