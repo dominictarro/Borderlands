@@ -94,11 +94,6 @@ class EquipmentLoss(SQLModel, table=True):
     )
 
     # Source context
-    country_of_production_flag_url: str = Field(
-        None,
-        title="Country of Production Flag URL",
-        description="The URL to the flag of the country that produces the `model`.",
-    )
     oryx_description: str | None = Field(
         None,
         title="Oryx Description",
@@ -112,6 +107,11 @@ class EquipmentLoss(SQLModel, table=True):
     oryx_evidence_url: str = Field(
         title="Oryx Evidence URL",
         description="The URL to the Oryx cites for the equipment loss.",
+    )
+    country_of_production_flag_url: str = Field(
+        None,
+        title="Country of Production Flag URL",
+        description="The URL to the flag of the country that produces the `model`.",
     )
     created_on: datetime.datetime = Field(
         title="As of Date",

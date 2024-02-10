@@ -280,7 +280,7 @@ def calculate_url_hash(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFr
     """
     logger.info("Calculating URL hashes")
     lf = lf.with_columns(
-        pl.col("oryx_evidence_url")
+        pl.col("evidence_url")
         .apply(lambda url: hashlib.sha256(url.encode("utf-8")).hexdigest())
         .alias("url_hash")
     )
@@ -403,6 +403,56 @@ def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFra
     return lf
 
 
+@wrappers.force_lazyframe
+@wrappers.inject_default_logger
+def generate_evidence_url(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
+    """Generates the evidence URL for the equipment losses.
+
+    Requires:
+    - `EquipmentLoss.oryx_id`
+    """
+
+    logger.info("Generating evidence URLs")
+    # First populate with the general URL provided by Oryx
+    lf = lf.with_columns(
+        pl.col("oryx_evidence_url").alias("evidence_url"),
+    )
+
+    # Force http to https
+    lf = lf.with_columns(
+        pl.when(pl.col("evidence_url").str.starts_with("http://"))
+        .then(pl.col("evidence_url").str.replace(r"^http://", "https://", n=1))
+        .otherwise(pl.col("evidence_url"))
+        .alias("evidence_url"),
+    )
+
+    # Remove / suffix from URLs
+    lf = lf.with_columns(
+        pl.col("evidence_url").str.replace(r"/$", "", n=1).alias("evidence_url"),
+    )
+
+    # Remove the www. prefix from URLs
+    lf = lf.with_columns(
+        pl.col("evidence_url")
+        .str.replace(r"^[^/]+?//(www\.)", "", n=1)
+        .alias("evidence_url"),
+    )
+
+    # For postimg URLs, remove the filename and image subdomain
+    # e.g. https://i.postimg.cc/vZQn2h5x/2001-t80bv-destr.jpg -> https://postimg.cc/vZQn2h5x
+    lf = lf.with_columns(
+        pl.when(pl.col("evidence_source") == EvidenceSource.POST_IMG.value)
+        .then(
+            pl.col("evidence_url")
+            .str.replace(r"i\.postimg\.cc", "postimg.cc")
+            .str.extract(r"(^.+\.cc/[^/]+?)/")
+            .fill_null(pl.col("evidence_url"))
+        )
+        .alias("evidence_url"),
+    )
+    return lf
+
+
 @task_persistence_subfolder(blocks.persistence_bucket)
 @task(
     tags=["www.oryxspioenkop.com"],
@@ -465,6 +515,7 @@ def pre_process_dataframe(
             lf.pipe(assign_status)
             .pipe(assign_country_of_production, country_url_mapper)
             .pipe(assign_evidence_source)
+            .pipe(generate_evidence_url)
             .pipe(calculate_url_hash)
             .pipe(resolve_aircraft_and_naval_page_updates, category_corrections.lazy())
             .pipe(calculate_case_id)
@@ -488,11 +539,12 @@ def pre_process_dataframe(
         "is_stripped",
         "is_sunk",
         "is_raised",
-        "oryx_evidence_url",
+        "evidence_url",
         "country_of_production",
         "evidence_source",
         "oryx_description",
         "oryx_id",
+        "oryx_evidence_url",
         "country_of_production_flag_url",
         "as_of_date",
     )
