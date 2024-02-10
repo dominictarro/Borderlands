@@ -121,7 +121,7 @@ class EquipmentLoss(SQLModel, table=True):
     )
 
     @classmethod
-    def polars_schema(cls):
+    def polars_schema(cls) -> dict[str, type[pl.DataType]]:
         """Returns the Polars schema for the model."""
         return dict(
             country=pl.Utf8,
@@ -148,3 +148,7 @@ class EquipmentLoss(SQLModel, table=True):
             date_loss_inference_method=pl.Utf8,
             created_on=pl.Datetime,
         )
+
+    def columns(self) -> list[str]:
+        """Returns the columns of the model."""
+        return list(self.polars_schema().keys())
