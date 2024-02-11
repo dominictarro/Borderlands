@@ -26,6 +26,29 @@ resource "aws_iam_role" "rds" {
     }
 }
 
+data "aws_iam_policy_document" "s3_read" {
+  statement {
+    effect    = "Allow"
+    actions   = [
+        "s3:GetObject"
+    ]
+    resources = [
+        "${aws_s3_bucket.core_bucket.arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "rds_s3_read" {
+    name        = "rds-s3-read"
+    description = "Allows RDS to read from S3"
+    policy      = data.aws_iam_policy_document.s3_read.json
+}
+
+resource "aws_iam_role_policy_attachment" "rds_s3_read" {
+    policy_arn = aws_iam_policy.rds_s3_read.arn
+    role       = aws_iam_role.rds.name
+}
+
 // ------------------------------
 // RDS Cluster
 
@@ -102,6 +125,10 @@ resource "aws_iam_user_policy" "prefect_user_dev_rds_access" {
     user   = aws_iam_user.prefect.name
     policy = data.aws_iam_policy_document.dev_rds_access.json
 }
+
+
+// ------------------------------
+// RDS Cluster Outputs
 
 output "rds_cluster_endpoint" {
     description = "The endpoint of the RDS cluster."
