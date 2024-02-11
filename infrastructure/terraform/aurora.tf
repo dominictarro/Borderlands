@@ -56,7 +56,13 @@ resource "aws_rds_cluster" "borderlands_dev" {
     // Cluster config
     cluster_identifier = "borderlands-dev"
     engine = "aurora-mysql"
+    engine_mode = "provisioned"
     engine_version = "8.0.mysql_aurora.3.04.1"
+
+    serverlessv2_scaling_configuration {
+        max_capacity = 1.0
+        min_capacity = 0.5
+    }
 
     // DB instance
     database_name = "borderlands"
@@ -89,7 +95,7 @@ resource "aws_rds_cluster" "borderlands_dev" {
 resource "aws_rds_cluster_instance" "instance_1" {
     cluster_identifier = aws_rds_cluster.borderlands_dev.cluster_identifier
     identifier = "borderlands-dev-instance-1"
-    instance_class = "db.t3.medium"
+    instance_class = "db.serverless"
     engine = "aurora-mysql"
     engine_version = "8.0.mysql_aurora.3.04.1"
 
