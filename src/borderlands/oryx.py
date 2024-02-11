@@ -19,9 +19,11 @@ from prefect_slack import messages
 from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
 from prefecto.serializers.polars import PolarsSerializer
+from sqlmodel import Session
 
 from .blocks import blocks
 from .enums import EvidenceSource
+from .models import EquipmentLoss
 from .parser import article, parser
 from .utilities import web, wrappers
 
@@ -573,3 +575,58 @@ def load_oryx_equipment_loss_to_s3(df: pl.DataFrame, path: str) -> str:
         df.write_csv(f)
         f.seek(0)
         return blocks.core_bucket.upload_from_file_object(f, path)
+
+
+@task(
+    name="Load S3 Oryx Equipment Loss to Table",
+    description="Loads the Oryx equipment loss data from S3 to the production table.",
+    retries=3,
+    retry_delay_seconds=exponential_backoff(3),
+    retry_jitter_factor=0.1,
+    timeout_seconds=600,
+)
+def load_s3_equipment_loss_to_table(key: str):
+    """Loads the Oryx equipment loss data from S3 to a table."""
+
+    engine = blocks.rds_credentials.get_engine()
+    with Session(engine, autocommit=False) as session:
+        # Create and populate a staging table
+        with session.begin():
+            # Create a temporary table
+            temp_table_name = f"{EquipmentLoss.__tablename__}_staging"
+            session.exec(
+                f"""
+                CREATE TEMPORARY TABLE {temp_table_name} LIKE {EquipmentLoss.__tablename__};
+                """
+            )
+            # Load the data from S3
+            session.exec(
+                """
+                LOAD DATA FROM S3 '%(key)s'
+                INTO TABLE %(tmp)s
+                FIELDS TERMINATED BY ','
+                LINES TERMINATED BY '\n'
+                IGNORE 1 LINES;
+                """,
+                params=dict(
+                    key=key,
+                    tmp=temp_table_name,
+                ),
+            )
+
+        # Filter for rows not in the target table and insert them
+        with session.begin():
+            session.exec(
+                """
+                INSERT INTO %(target)s
+                SELECT
+                    staging.*
+                FROM %(tmp)s as staging
+                ANTIJOIN %(target)s as target
+                USING (country, category, model, url_hash, case_id);
+                """,
+                params=dict(
+                    target=EquipmentLoss.__tablename__,
+                    tmp=temp_table_name,
+                ),
+            )

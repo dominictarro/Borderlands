@@ -13,6 +13,7 @@ from borderlands.oryx import (
     alert_on_unmapped_country_flags,
     get_oryx_page,
     load_oryx_equipment_loss_to_s3,
+    load_s3_equipment_loss_to_table,
     parse_oryx_web_page,
     pre_process_dataframe,
 )
@@ -26,9 +27,7 @@ from borderlands.utilities import tasks
         "Flow to extract the equipment loss data from the Russian"
         "and Ukrainian loss pages on https://www.oryxspioenkop.com/."
     ),
-    # No reason this should take more than 10 minutes. Most runs will be < 30
-    # seconds
-    timeout_seconds=600,
+    timeout_seconds=1800,
     log_prints=True,
 )
 def oryx_flow(prefix: str | None = None) -> str:
@@ -75,4 +74,5 @@ def oryx_flow(prefix: str | None = None) -> str:
 
     # Generate the key
     key = LakeNav(prefix).equipment_data(dt.strftime("%Y-%m-%d"))
-    return load_oryx_equipment_loss_to_s3(df, key)
+    stage_key = load_oryx_equipment_loss_to_s3(df, key)
+    load_s3_equipment_loss_to_table(stage_key)

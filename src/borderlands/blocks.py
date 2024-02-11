@@ -9,6 +9,8 @@ from prefect_aws import S3Bucket
 from prefect_slack import SlackWebhook
 from prefecto.filesystems import create_child
 
+from .utilities.blocks import RdsCredentials
+
 
 class Blocks:
     """Class for lazy loading Prefect Blocks."""
@@ -19,6 +21,7 @@ class Blocks:
     _assets_bucket: S3Bucket | None = None
     _media_bucket: S3Bucket | None = None
     _webhook: SlackWebhook | None = None
+    _rds_credentials: RdsCredentials | None = None
 
     @property
     def core_bucket(self) -> S3Bucket:
@@ -64,6 +67,13 @@ class Blocks:
             self._media_bucket = create_child(self.core_bucket, "media", "-media")
         return self._media_bucket
 
+    @property
+    def rds_credentials(self) -> RdsCredentials:
+        """Returns the RDS credentials for the program. Loads if it isn't already."""
+        if not self._rds_credentials:
+            self._rds_credentials = RdsCredentials.load("rds-credentials-borderlands")
+        return self._rds_credentials
+
     @sync_compatible
     async def load(self):
         """Load the blocks."""
@@ -99,6 +109,12 @@ class Blocks:
             (await self.media_bucket)
             if asyncio.iscoroutine(self.media_bucket)
             else self.media_bucket
+        )
+
+        self._rds_credentials = (
+            (await self.rds_credentials)
+            if asyncio.iscoroutine(self.rds_credentials)
+            else self.rds_credentials
         )
 
 
