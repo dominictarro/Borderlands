@@ -3,119 +3,123 @@ Storage blocks for the pipeline.
 """
 
 import asyncio
+from typing import Awaitable
 
+from prefect.blocks.core import Block
 from prefect.utilities.asyncutils import sync_compatible
 from prefect_aws import S3Bucket
 from prefect_slack import SlackWebhook
-from prefecto.filesystems import create_child
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .utilities.blocks import RdsCredentials
 
 
-class Blocks:
+class Blocks(BaseSettings):
     """Class for lazy loading Prefect Blocks."""
 
-    _core_bucket: S3Bucket | None = None
-    _persistence_bucket: S3Bucket | None = None
-    _oryx_bucket: S3Bucket | None = None
-    _assets_bucket: S3Bucket | None = None
-    _media_bucket: S3Bucket | None = None
-    _webhook: SlackWebhook | None = None
-    _rds_credentials: RdsCredentials | None = None
+    model_config = SettingsConfigDict(
+        env_prefix="blocks_",
+        case_sensitive=False,
+    )
+
+    core_bucket_name: str = Field(
+        "s3-bucket-borderlands-core",
+        description="The name of the S3 bucket for result data.",
+    )
+
+    persistence_bucket_name: str = Field(
+        "s3-bucket-borderlands-persistence",
+        description="The name of the S3 bucket for Prefect persistence data.",
+    )
+
+    webhook_name: str = Field(
+        "slack-webhook-borderlands",
+        description="The name of the Slack webhook for notifications.",
+    )
+
+    rds_credentials_name: str = Field(
+        "rds-credentials-borderlands",
+        description="The name of the RDS credentials for the program.",
+    )
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._core_bucket: S3Bucket | None = None
+        self._persistence_bucket: S3Bucket | None = None
+        self._webhook: SlackWebhook | None = None
+        self._rds_credentials: RdsCredentials | None = None
+
+    def copy(self) -> "Blocks":
+        """Return a copy of the blocks."""
+        new_blocks = Blocks()
+
+        new_blocks._core_bucket = self._core_bucket
+        new_blocks.core_bucket_name = self.core_bucket_name
+
+        new_blocks._persistence_bucket = self._persistence_bucket
+        new_blocks.persistence_bucket_name = self.persistence_bucket_name
+
+        new_blocks._webhook = self._webhook
+        new_blocks.webhook_name = self.webhook_name
+
+        new_blocks._rds_credentials = self._rds_credentials
+        new_blocks.rds_credentials_name = self.rds_credentials_name
+        return new_blocks
+
+    def reset(self):
+        """Reset the blocks."""
+        self._core_bucket = None
+        self._persistence_bucket = None
+        self._webhook = None
+        self._rds_credentials = None
 
     @property
     def core_bucket(self) -> S3Bucket:
         """Returns the bucket for the program. Loads if it isn't already."""
         if not self._core_bucket:
-            self._core_bucket = S3Bucket.load("s3-bucket-borderlands-core")
+            self._core_bucket = S3Bucket.load(self.core_bucket_name)
         return self._core_bucket
 
     @property
     def persistence_bucket(self) -> S3Bucket:
         """Returns the bucket for the program. Loads if it isn't already."""
         if not self._persistence_bucket:
-            self._persistence_bucket = S3Bucket.load(
-                "s3-bucket-borderlands-persistence"
-            )
+            self._persistence_bucket = S3Bucket.load(self.persistence_bucket_name)
         return self._persistence_bucket
 
     @property
     def webhook(self) -> SlackWebhook:
         """Returns the webhook for the program. Loads if it isn't already."""
         if not self._webhook:
-            self._webhook = SlackWebhook.load("slack-webhook-borderlands")
+            self._webhook = SlackWebhook.load(self.webhook_name)
         return self._webhook
-
-    @property
-    def oryx_bucket(self) -> S3Bucket:
-        """Returns the bucket for the program. Loads if it isn't already."""
-        if not self._oryx_bucket:
-            self._oryx_bucket = create_child(self.core_bucket, "oryx", "-oryx")
-        return self._oryx_bucket
-
-    @property
-    def assets_bucket(self) -> S3Bucket:
-        """Returns the bucket for the program. Loads if it isn't already."""
-        if not self._assets_bucket:
-            self._assets_bucket = create_child(self.core_bucket, "assets", "-assets")
-        return self._assets_bucket
-
-    @property
-    def media_bucket(self) -> S3Bucket:
-        """Returns the bucket for the program. Loads if it isn't already."""
-        if not self._media_bucket:
-            self._media_bucket = create_child(self.core_bucket, "media", "-media")
-        return self._media_bucket
 
     @property
     def rds_credentials(self) -> RdsCredentials:
         """Returns the RDS credentials for the program. Loads if it isn't already."""
         if not self._rds_credentials:
-            self._rds_credentials = RdsCredentials.load("rds-credentials-borderlands")
+            self._rds_credentials = RdsCredentials.load(self.rds_credentials_name)
         return self._rds_credentials
 
     @sync_compatible
     async def load(self):
         """Load the blocks."""
-        self._core_bucket = (
-            (await self.core_bucket)
-            if asyncio.iscoroutine(self.core_bucket)
-            else self.core_bucket
-        )
+        self._core_bucket = _return_or_await_and_return(self.core_bucket)
 
-        self._persistence_bucket = (
-            (await self.persistence_bucket)
-            if asyncio.iscoroutine(self.persistence_bucket)
-            else self.persistence_bucket
-        )
+        self._persistence_bucket = _return_or_await_and_return(self.persistence_bucket)
 
-        self._webhook = (
-            (await self.webhook) if asyncio.iscoroutine(self.webhook) else self.webhook
-        )
+        self._webhook = _return_or_await_and_return(self.webhook)
 
-        self._oryx_bucket = (
-            (await self.oryx_bucket)
-            if asyncio.iscoroutine(self.oryx_bucket)
-            else self.oryx_bucket
-        )
+        self._rds_credentials = _return_or_await_and_return(self.rds_credentials)
 
-        self._assets_bucket = (
-            (await self.assets_bucket)
-            if asyncio.iscoroutine(self.assets_bucket)
-            else self.assets_bucket
-        )
 
-        self._media_bucket = (
-            (await self.media_bucket)
-            if asyncio.iscoroutine(self.media_bucket)
-            else self.media_bucket
-        )
-
-        self._rds_credentials = (
-            (await self.rds_credentials)
-            if asyncio.iscoroutine(self.rds_credentials)
-            else self.rds_credentials
-        )
+@sync_compatible
+async def _return_or_await_and_return(block: Block | Awaitable[Block]) -> Block:
+    """Return the block if it is already loaded, otherwise await and return."""
+    if asyncio.iscoroutine(block):
+        return await block
+    return block
 
 
 blocks = Blocks()
