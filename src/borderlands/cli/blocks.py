@@ -310,7 +310,7 @@ def rds_credentials(
         credentials = os.environ[env_var]
 
     from prefect_aws import AwsCredentials
-    from prefect_sqlalchemy import AsyncDriver
+    from prefect_sqlalchemy import SyncDriver
 
     from borderlands.utilities.blocks import RdsCredentials
 
@@ -318,7 +318,7 @@ def rds_credentials(
 
     db_credentials = RdsCredentials(
         _block_document_name=block_name,
-        driver=AsyncDriver.MYSQL_AIOMYSQL,
+        driver=SyncDriver.MYSQL_MYSQLCONNECTOR,
         database=database_name,
         username=username,
         host=host,
