@@ -5,6 +5,7 @@ Database models for the datasets.
 import datetime
 
 import polars as pl
+import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
 
 from borderlands.enums import EvidenceSource
@@ -17,22 +18,27 @@ class EquipmentLoss(SQLModel, table=True):
     country: str = Field(
         primary_key=True,
         title="Country",
-        description="The common name of country that suffered the equipment loss.",
+        description="The ISO Alpha-3 code of the country that lost the equipment.",
+        sa_type=sa.String(3),
     )
     category: str = Field(
         primary_key=True,
         title="Category",
         description="The equipment category as defined by Oryx.",
+        sa_type=sa.String(64),
     )
     model: str = Field(
         primary_key=True,
         title="Model",
         description="The equipment model as defined by Oryx.",
+        sa_type=sa.String(64),
     )
     url_hash: str = Field(
         primary_key=True,
         title="URL Hash",
         description="A SHA-256 hash of the `evidence_url`.",
+        sa_type=sa.String(64),
+        index=True,
     )
     case_id: int = Field(
         primary_key=True,
@@ -41,6 +47,7 @@ class EquipmentLoss(SQLModel, table=True):
             "A special ID for discriminating equipment losses when their `country`, `category`, `model`, and `url_hash` are the same."
             " Order is determined by appearance in the source page."
         ),
+        sa_type=sa.SmallInteger,
     )
 
     # Statuses
@@ -82,15 +89,18 @@ class EquipmentLoss(SQLModel, table=True):
         title="Evidence URL",
         description="The URL to the evidence of the equipment loss. Derived from `oryx_evidence_url`.",
         nullable=False,
+        sa_type=sa.String(512),
     )
     country_of_production: str = Field(
         title="Country of Production",
         description="The ISO Alpha-3 code of the country that produces the equipment.",
+        sa_type=sa.String(3),
     )
     evidence_source: EvidenceSource = Field(
         None,
         title="Evidence Source",
         description="The source the Oryx loss references as evidence of the status.",
+        sa_type=sa.String(32),
     )
 
     # Source context
@@ -107,11 +117,13 @@ class EquipmentLoss(SQLModel, table=True):
     oryx_evidence_url: str = Field(
         title="Oryx Evidence URL",
         description="The URL to the Oryx cites for the equipment loss.",
+        sa_type=sa.String(512),
     )
     country_of_production_flag_url: str = Field(
         None,
         title="Country of Production Flag URL",
         description="The URL to the flag of the country that produces the `model`.",
+        sa_type=sa.String(512),
     )
     created_on: datetime.datetime = Field(
         title="As of Date",

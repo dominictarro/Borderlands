@@ -25,7 +25,7 @@ GRANT
     CREATE TEMPORARY TABLES,
     EXECUTE,
     TRIGGER
-ON Borderlands.* TO 'BorderlandsExecutor';
+ON borderlands.* TO 'BorderlandsExecutor';
 
 -- Grants the RDS user the necessary permissions to read and write to the Borderlands database
 GRANT 'BorderlandsExecutor' TO 'Prefect';

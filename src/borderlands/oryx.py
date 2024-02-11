@@ -456,6 +456,25 @@ def generate_evidence_url(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.Laz
     return lf
 
 
+@wrappers.force_lazyframe
+@wrappers.inject_default_logger
+def convert_country_to_iso(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFrame:
+    """Converts the country names to their ISO 3166-1 alpha-2 codes.
+
+    Requires:
+    - `EquipmentLoss.country`
+    """
+    logger.info("Converting country names to ISO codes")
+    return lf.with_columns(
+        pl.col("country").replace(
+            {
+                "Russia": "RUS",
+                "Ukraine": "UKR",
+            }
+        ),
+    )
+
+
 @task_persistence_subfolder(blocks.persistence_bucket)
 @task(
     tags=["www.oryxspioenkop.com"],
@@ -522,6 +541,7 @@ def pre_process_dataframe(
             .pipe(calculate_url_hash)
             .pipe(resolve_aircraft_and_naval_page_updates, category_corrections.lazy())
             .pipe(calculate_case_id)
+            .pipe(convert_country_to_iso)
         )
         .collect()
         .lazy()
