@@ -250,6 +250,86 @@ def kaggle_credentials(
 
 @blocks.command()
 @click.option(
+    "-n",
+    "--database-name",
+    type=str,
+    default="borderlands",
+    help="The name of the database.",
+)
+@click.option(
+    "-u",
+    "--username",
+    type=str,
+    default="Prefect",
+    help="The username for the database.",
+)
+@click.option(
+    "-h",
+    "--host",
+    type=str,
+    default="env:DATABASE_HOST",
+    help="The host for the database. Prefix with 'env:' to use an environment variable.",
+)
+@click.option(
+    "-p",
+    "--port",
+    type=int,
+    default=3306,
+    help="The port for the database.",
+)
+@click.option(
+    "-c",
+    "--credentials",
+    type=str,
+    default="aws-credentials-prefect",
+    help="The name of the AWS credentials block. Prefix with 'env:' to use an environment variable.",
+)
+@click.option(
+    "-b",
+    "--block-name",
+    type=str,
+    default="rds-credentials-dev",
+    help="The name of the block.",
+)
+def rds_credentials(
+    database_name: str,
+    username: str,
+    host: str,
+    port: int,
+    credentials: str,
+    block_name: str,
+):
+    """Create the RDS credentials block. The database and IAM user ought to be configured for AWS IAM authentication."""
+
+    if host.startswith("env:"):
+        env_var = host.split(":", maxsplit=1)[1]
+        host = os.environ[env_var]
+
+    if credentials.startswith("env:"):
+        env_var = credentials.split(":", maxsplit=1)[1]
+        credentials = os.environ[env_var]
+
+    from prefect_aws import AwsCredentials
+    from prefect_sqlalchemy import AsyncDriver
+
+    from borderlands.utilities.blocks import RdsCredentials
+
+    iam_credentials = AwsCredentials.load(credentials)
+
+    db_credentials = RdsCredentials(
+        _block_document_name=block_name,
+        driver=AsyncDriver.MYSQL_AIOMYSQL,
+        database=database_name,
+        username=username,
+        host=host,
+        port=port,
+        iam_credentials=iam_credentials,
+    )
+    save(db_credentials)
+
+
+@blocks.command()
+@click.option(
     "-u",
     "--url",
     type=str,
