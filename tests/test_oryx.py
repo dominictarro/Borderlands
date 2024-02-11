@@ -25,11 +25,11 @@ def test_assign_status(logger):
             ["was sunk"],
             ["was raised"],
         ],
-        schema=dict(description=pl.Utf8),
+        schema=dict(oryx_description=pl.Utf8),
     )
     result = assign_status(df.lazy(), logger=logger).collect()
     EXPECTED_COLUMNS = [
-        "description",
+        "oryx_description",
         "is_captured",
         "is_destroyed",
         "is_damaged",
@@ -41,7 +41,7 @@ def test_assign_status(logger):
     ]
     assert result.columns == EXPECTED_COLUMNS
     assert result.melt(
-        id_vars=["description"],
+        id_vars=["oryx_description"],
         value_vars=EXPECTED_COLUMNS[1:],
         variable_name="status",
         value_name="is_status",
