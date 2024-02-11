@@ -3,10 +3,8 @@ Flow to retrieve the web pages of Russian and Ukrainian equipment.
 """
 
 import datetime
-import io
 
-import polars as pl
-from prefect import flow, task
+from prefect import flow
 from prefect.context import FlowRunContext, get_run_context
 
 from borderlands import assets
@@ -14,37 +12,12 @@ from borderlands.blocks import blocks
 from borderlands.oryx import (
     alert_on_unmapped_country_flags,
     get_oryx_page,
+    load_oryx_equipment_loss_to_s3,
     parse_oryx_web_page,
     pre_process_dataframe,
 )
-from borderlands.paths import create_oryx_key
+from borderlands.paths import LakeNav
 from borderlands.utilities import tasks
-
-
-@task
-def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
-    """Uploads the DataFrame to S3.
-
-    Args:
-        df (pl.DataFrame): The DataFrame to upload.
-        dt (datetime.datetime): The datetime to use for the key.
-
-    Returns:
-        str: The key the DataFrame was uploaded to.
-    """
-    key = create_oryx_key(dt, ext="parquet")
-    df = df.sort(
-        "country",
-        "category",
-        "model",
-        "url_hash",
-        "case_id",
-    )
-    with io.BytesIO() as buffer:
-        df.write_parquet(buffer, compression="zstd", compression_level=22)
-        buffer.seek(0)
-        blob = buffer.read()
-    return tasks.upload.fn(content=blob, key=key, bucket=blocks.oryx_bucket)
 
 
 @flow(
@@ -58,9 +31,12 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
     timeout_seconds=600,
     log_prints=True,
 )
-def oryx_flow() -> str:
+def oryx_flow(prefix: str | None = None) -> str:
     """Flow to retrieve the web pages of Russian and Ukrainian equipment
     losses and parse them into processable JSON documents.
+
+    Args:
+        prefix (str, optional): The prefix to use for the S3 key. Defaults to None.
 
     Returns:
         str: The key the DataFrame was uploaded to.
@@ -96,4 +72,7 @@ def oryx_flow() -> str:
     )
     df = pre_process_dataframe(df, mapper, category_corrections, dt)
     alert_on_unmapped_country_flags(df)
-    return upload(df, dt)
+
+    # Generate the key
+    key = LakeNav(prefix).equipment_data(dt.strftime("%Y-%m-%d"))
+    return load_oryx_equipment_loss_to_s3(df, key)

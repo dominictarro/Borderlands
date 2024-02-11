@@ -6,6 +6,7 @@ import datetime
 import enum
 import hashlib
 import logging
+import tempfile
 from urllib.parse import urlparse
 
 import bs4
@@ -549,3 +550,26 @@ def pre_process_dataframe(
         "as_of_date",
     )
     return lf.collect()
+
+
+@task(
+    name="Load Oryx Equipment Loss to S3",
+    description="Loads a snapshot of the Oryx equipment loss data to S3 as an uncompressed CSV.",
+    retries=3,
+    retry_delay_seconds=exponential_backoff(3),
+    retry_jitter_factor=0.1,
+)
+def load_oryx_equipment_loss_to_s3(df: pl.DataFrame, path: str) -> str:
+    """Loads the Oryx equipment loss data to S3.
+
+    Parameters
+    ----------
+    df : pl.DataFrame
+        The data to load to S3.
+    path : str
+        The path to save the data to.
+    """
+    with tempfile.NamedTemporaryFile(mode="w+b", suffix=".csv") as f:
+        df.write_csv(f)
+        f.seek(0)
+        return blocks.core_bucket.upload_from_file_object(f, path)
