@@ -2,10 +2,67 @@
 Tests for the article parser.
 """
 
+import gzip
+from pathlib import Path
 from typing import TYPE_CHECKING
+
+import bs4
+import pytest
 
 if TYPE_CHECKING:
     from borderlands.parser.article import ArticleParser
+
+
+@pytest.fixture
+def oryx_ukraine_webpage(test_data_path: Path) -> bs4.Tag:
+    """Path to the Oryx Ukraine webpage."""
+    with gzip.open(test_data_path / "pages" / "ukraine.html.gz", "r") as fo:
+        return bs4.BeautifulSoup(fo.read(), features="html.parser")
+
+
+@pytest.fixture
+def oryx_russia_webpage(test_data_path: Path) -> bs4.Tag:
+    """Path to the Oryx Ukraine webpage."""
+    with gzip.open(test_data_path / "pages" / "russia.html.gz", "r") as fo:
+        return bs4.BeautifulSoup(fo.read(), features="html.parser")
+
+
+@pytest.fixture
+def ukraine_article_parser(oryx_ukraine_webpage: bs4.Tag) -> "ArticleParser":
+    """An `ArticleParser` object."""
+    from borderlands.parser.article import ArticleParser
+
+    body = oryx_ukraine_webpage.find(
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
+    )
+    from borderlands.parser.article import UKRAINE_DATA_SECTION_INDEX
+
+    yield ArticleParser(body, UKRAINE_DATA_SECTION_INDEX)
+
+
+@pytest.fixture
+def russia_article_parser(oryx_russia_webpage: bs4.Tag) -> "ArticleParser":
+    """An `ArticleParser` object."""
+    from borderlands.parser.article import ArticleParser
+
+    body = oryx_russia_webpage.find(
+        attrs={"class": "post-body entry-content", "itemprop": "articleBody"}
+    )
+    from borderlands.parser.article import RUSSIA_DATA_SECTION_INDEX
+
+    yield ArticleParser(body, RUSSIA_DATA_SECTION_INDEX)
+
+
+@pytest.fixture
+def ukraine_page_parse_result(ukraine_article_parser: "ArticleParser") -> list:
+    """The result of parsing the Ukraine page."""
+    yield list(ukraine_article_parser.parse())
+
+
+@pytest.fixture
+def russia_page_parse_result(russia_article_parser: "ArticleParser") -> list:
+    """The result of parsing the Russia page."""
+    yield list(russia_article_parser.parse())
 
 
 def test_ukraine_page_parse(ukraine_article_parser: "ArticleParser"):
