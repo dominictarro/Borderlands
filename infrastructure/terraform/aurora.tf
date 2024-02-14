@@ -52,12 +52,34 @@ resource "aws_iam_role_policy_attachment" "rds_s3_read" {
 // ------------------------------
 // RDS Cluster
 
+resource "aws_rds_cluster_parameter_group" "dev" {
+    name        = "rds-cluster-pg-borderlands-dev"
+    family      = "aurora-mysql8.0"
+    description = "Custom parameter group for the Borderlands dev RDS cluster"
+
+    parameter {
+        name  = "aws_default_s3_role"
+        value = aws_iam_role.rds.arn
+    }
+
+    parameter {
+        // Allows Prefect DB user to automatically assume the BorderlandsExecutor role
+        name  = "activate_all_roles_on_login"
+        value = "TRUE"
+    }
+
+    tags = {
+        project = "borderlands"
+    }
+}
+
 resource "aws_rds_cluster" "borderlands_dev" {
     // Cluster config
     cluster_identifier = "borderlands-dev"
     engine = "aurora-mysql"
     engine_mode = "provisioned"
     engine_version = "8.0.mysql_aurora.3.04.1"
+    db_cluster_parameter_group_name = aws_rds_cluster_parameter_group.dev.name
 
     serverlessv2_scaling_configuration {
         max_capacity = 1.0

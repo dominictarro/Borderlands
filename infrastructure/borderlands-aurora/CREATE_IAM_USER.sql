@@ -24,7 +24,8 @@ GRANT
     -- permissions for more complex routines
     CREATE TEMPORARY TABLES,
     EXECUTE,
-    TRIGGER
+    TRIGGER,
+    LOAD FROM S3
 ON borderlands.* TO 'BorderlandsExecutor';
 
 -- Grants the RDS user the necessary permissions to read and write to the Borderlands database
