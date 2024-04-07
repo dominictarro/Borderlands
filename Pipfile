@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 beautifulsoup4 = "*"
-prefect = ">=2.14.17"
+prefect = ">=2.16.5"
 prefect-aws = "*"
 lxml = "*"
 prefecto = ">=0.0.4"
