@@ -12,12 +12,9 @@ import bs4
 import httpx
 import polars as pl
 import zoneinfo
-from prefect.serializers import CompressedPickleSerializer
 from prefect.tasks import exponential_backoff, task
 from prefect_slack import messages
-from prefecto.filesystems import task_persistence_subfolder
 from prefecto.logging import get_prefect_or_default_logger
-from prefecto.serializers.polars import PolarsSerializer
 
 from .blocks import blocks
 from .definitions import EquipmentLoss
@@ -26,15 +23,11 @@ from .parser import article, parser
 from .utilities import web, wrappers
 
 
-@task_persistence_subfolder(blocks.persistence_bucket)
 @task(
     tags=["www.oryxspioenkop.com"],
     retries=4,
     retry_delay_seconds=exponential_backoff(backoff_factor=3),
     retry_jitter_factor=0.5,
-    persist_result=True,
-    # result_storage set by wrapper
-    result_serializer=CompressedPickleSerializer(compressionlib="gzip"),
 )
 async def get_oryx_page(url: str) -> str:
     """Requests the Ukrainian equipment losses [web page](https://www.oryxspioenkop.com/2022/02/attack-on-europe-documenting-ukrainian.html)\
@@ -410,13 +403,10 @@ def calculate_case_id(lf: pl.LazyFrame, *, logger: logging.Logger) -> pl.LazyFra
     return lf
 
 
-@task_persistence_subfolder(blocks.persistence_bucket)
 @task(
     tags=["www.oryxspioenkop.com"],
     name="Process Parsed Oryx Equipment Losses",
     description="Cleans the parsed Oryx equipment losses and computes the basic fields.",
-    result_serializer=PolarsSerializer(method="polars.json"),
-    persist_result=True,
 )
 def pre_process_dataframe(
     df: pl.DataFrame,

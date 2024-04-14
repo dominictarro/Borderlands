@@ -14,7 +14,6 @@ class Blocks:
     """Class for lazy loading Prefect Blocks."""
 
     _core_bucket: S3Bucket | None = None
-    _persistence_bucket: S3Bucket | None = None
     _oryx_bucket: S3Bucket | None = None
     _assets_bucket: S3Bucket | None = None
     _media_bucket: S3Bucket | None = None
@@ -26,15 +25,6 @@ class Blocks:
         if not self._core_bucket:
             self._core_bucket = S3Bucket.load("s3-bucket-borderlands-core")
         return self._core_bucket
-
-    @property
-    def persistence_bucket(self) -> S3Bucket:
-        """Returns the bucket for the program. Loads if it isn't already."""
-        if not self._persistence_bucket:
-            self._persistence_bucket = S3Bucket.load(
-                "s3-bucket-borderlands-persistence"
-            )
-        return self._persistence_bucket
 
     @property
     def webhook(self) -> SlackWebhook:
@@ -71,12 +61,6 @@ class Blocks:
             (await self.core_bucket)
             if asyncio.iscoroutine(self.core_bucket)
             else self.core_bucket
-        )
-
-        self._persistence_bucket = (
-            (await self.persistence_bucket)
-            if asyncio.iscoroutine(self.persistence_bucket)
-            else self.persistence_bucket
         )
 
         self._webhook = (

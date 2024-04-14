@@ -101,41 +101,6 @@ def bucket_core(bucket_name: str, credentials: str, block_name: str):
 
 @blocks.command()
 @click.option(
-    "-n",
-    "--bucket-name",
-    type=str,
-    default="borderlands-persistence",
-    help="The name of the S3 bucket.",
-)
-@click.option(
-    "-c",
-    "--credentials",
-    type=str,
-    default="aws-credentials-prefect",
-    help="The name of the AWS credentials block.",
-)
-@click.option(
-    "-b",
-    "--block-name",
-    type=str,
-    default="s3-bucket-borderlands-persistence",
-    help="The name of the block.",
-)
-def bucket_persistence(bucket_name: str, credentials: str, block_name: str):
-    """Create the S3 Bucket block for the persistence bucket."""
-    from prefect_aws import AwsCredentials, S3Bucket
-
-    aws_credentials = AwsCredentials.load(credentials)
-    persistence_bucket = S3Bucket(
-        _block_document_name=block_name,
-        bucket_name=bucket_name,
-        credentials=aws_credentials,
-    )
-    save(persistence_bucket)
-
-
-@blocks.command()
-@click.option(
     "-t",
     "--tag",
     type=str,
