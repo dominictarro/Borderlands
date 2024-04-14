@@ -48,12 +48,6 @@ def core_bucket(credentials: AwsCredentials) -> S3Bucket:
 
 
 @pytest.fixture(scope="session")
-def persistence_bucket(credentials: AwsCredentials) -> S3Bucket:
-    """The persistence bucket."""
-    yield S3Bucket(bucket_name="borderlands-persistence", credentials=credentials)
-
-
-@pytest.fixture(scope="session")
 def slack_webhook() -> SlackWebhook:
     """The Slack webhook."""
     yield SlackWebhook(
@@ -63,25 +57,21 @@ def slack_webhook() -> SlackWebhook:
 
 
 @pytest.fixture(autouse=True, scope="session")
-def prefect_db(slack_webhook, credentials, core_bucket, persistence_bucket):
+def prefect_db(slack_webhook, credentials, core_bucket):
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
         slack_webhook.save(name="slack-webhook-borderlands")
         credentials.save(name="aws-credentials-prefect")
         core_bucket.save(name="s3-bucket-borderlands-core")
-        persistence_bucket.save(name="s3-bucket-borderlands-persistence")
         yield
 
 
 @pytest.fixture(autouse=False, scope="function")
-def mock_buckets(
-    core_bucket: S3Bucket, persistence_bucket: S3Bucket, test_data_path: Path
-):
+def mock_buckets(core_bucket: S3Bucket, test_data_path: Path):
     """Mocks the S3 buckets."""
     with mock_bucket(core_bucket.bucket_name):
         core_bucket.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
-        with mock_bucket(persistence_bucket.bucket_name, activate_moto=False):
-            yield
+        yield
 
 
 @pytest.fixture
