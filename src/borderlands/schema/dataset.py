@@ -44,7 +44,7 @@ class Dataset(Formatter):
             pl.DataFrame: The dataset's latest release.
         """
         with io.BytesIO() as f:
-            blocks.core_bucket.download_object_to_file_object(self.release_path, f)
+            blocks.bucket.download_object_to_file_object(self.release_path, f)
             f.seek(0)
             return pl.read_parquet(f).select(self.schema.columns(include, exclude))
 
