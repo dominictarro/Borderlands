@@ -36,7 +36,6 @@ def release_dataset(path: str, dataset: Dataset) -> str:
 )
 def borderlands_flow():
     """Flow to orchestrate the Oryx subflows."""
-    blocks.load()
     oryx_key = oryx.oryx_flow()
     oryx_release = release_dataset.submit(
         oryx_key,
