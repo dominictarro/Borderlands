@@ -6,7 +6,6 @@ import asyncio
 
 from prefect.utilities.asyncutils import sync_compatible
 from prefect_aws import S3Bucket
-from prefect_slack import SlackWebhook
 from prefecto.filesystems import create_child
 
 
@@ -17,7 +16,6 @@ class Blocks:
     _oryx_bucket: S3Bucket | None = None
     _assets_bucket: S3Bucket | None = None
     _media_bucket: S3Bucket | None = None
-    _webhook: SlackWebhook | None = None
 
     @property
     def core_bucket(self) -> S3Bucket:
@@ -25,13 +23,6 @@ class Blocks:
         if not self._core_bucket:
             self._core_bucket = S3Bucket.load("s3-bucket-borderlands-core")
         return self._core_bucket
-
-    @property
-    def webhook(self) -> SlackWebhook:
-        """Returns the webhook for the program. Loads if it isn't already."""
-        if not self._webhook:
-            self._webhook = SlackWebhook.load("slack-webhook-borderlands")
-        return self._webhook
 
     @property
     def oryx_bucket(self) -> S3Bucket:
@@ -61,10 +52,6 @@ class Blocks:
             (await self.core_bucket)
             if asyncio.iscoroutine(self.core_bucket)
             else self.core_bucket
-        )
-
-        self._webhook = (
-            (await self.webhook) if asyncio.iscoroutine(self.webhook) else self.webhook
         )
 
         self._oryx_bucket = (
