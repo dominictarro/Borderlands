@@ -8,12 +8,13 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import boto3
 import bs4
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
+from moto import mock_aws
 from prefect.testing.utilities import prefect_test_harness
 from prefect_aws import AwsCredentials, S3Bucket
-from prefecto.testing.s3 import mock_bucket
 
 if TYPE_CHECKING:
     from borderlands.parser.article import ArticleParser
@@ -39,26 +40,28 @@ def credentials() -> AwsCredentials:
 
 
 @pytest.fixture(scope="session")
-def core_bucket(credentials: AwsCredentials) -> S3Bucket:
+def bucket(credentials: AwsCredentials) -> S3Bucket:
     """The core bucket."""
     yield S3Bucket(bucket_name="borderlands-core", credentials=credentials)
 
 
 @pytest.fixture(autouse=True, scope="session")
-def prefect_db(credentials, core_bucket):
+def prefect_db(credentials, bucket):
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
         credentials.save(name="aws-credentials-prefect")
-        core_bucket.save(name="s3-bucket-borderlands-core")
+        bucket.save(name="s3-bucket-borderlands-core")
         yield
 
 
 @pytest.fixture(autouse=False, scope="function")
-def mock_buckets(core_bucket: S3Bucket, test_data_path: Path):
+@mock_aws
+def mock_buckets(bucket: S3Bucket, test_data_path: Path):
     """Mocks the S3 buckets."""
-    with mock_bucket(core_bucket.bucket_name):
-        core_bucket.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
-        yield
+    s3 = boto3.client("s3")
+    s3.create_bucket(Bucket=bucket.bucket_name)
+    bucket.upload_from_folder(test_data_path / "buckets" / "borderlands-core")
+    yield
 
 
 @pytest.fixture
