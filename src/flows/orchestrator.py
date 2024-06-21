@@ -21,7 +21,7 @@ from borderlands.schema import Dataset
 def release_dataset(path: str, dataset: Dataset) -> str:
     """Release the dataset to the bucket."""
     src_bucket = S3Bucket.load(dataset.host_bucket)
-    path = blocks.core_bucket.stream_from(
+    path = blocks.bucket.stream_from(
         src_bucket,
         path,
         dataset.release_path,

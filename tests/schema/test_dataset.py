@@ -21,16 +21,16 @@ class TestDataset:
             },
         )
 
-    def test_read(self, mock_buckets, core_bucket: S3Bucket, test_schema: type[Schema]):
+    def test_read(self, mock_buckets, bucket: S3Bucket, test_schema: type[Schema]):
 
         with io.BytesIO() as f:
             pl.DataFrame({"foo": [1, 2, 3], "bar": [1.0, 2.0, 3.0]}).write_parquet(f)
             f.seek(0)
-            core_bucket.upload_from_file_object(f, "test.parquet")
+            bucket.upload_from_file_object(f, "test.parquet")
 
         dataset = Dataset(
             label="test",
-            host_bucket=core_bucket.bucket_name,
+            host_bucket=bucket.bucket_name,
             release_path="test.parquet",
             schema=test_schema,
             description="test dataset desc",

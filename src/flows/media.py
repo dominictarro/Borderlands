@@ -28,14 +28,14 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
     Returns:
         str: The key the DataFrame was uploaded to.
     """
-    key = create_inventory_key(dt)
+    key = f"oryx/{create_inventory_key(dt)}"
     df = df.select(definitions.Media.columns())
     df = df.sort(definitions.Media.as_of_date.name)
     with io.BytesIO() as buffer:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)
         blob = buffer.read()
-    return tasks.upload.fn(content=blob, key=key, bucket=blocks.oryx_bucket)
+    return tasks.upload.fn(content=blob, key=key, bucket=blocks.bucket)
 
 
 @task
@@ -49,7 +49,7 @@ def download_oryx(path: str) -> pl.DataFrame:
         pl.DataFrame: The DataFrame with the media downloaded.
     """
     with io.BytesIO() as buffer:
-        blocks.core_bucket.download_object_to_file_object(path, buffer)
+        blocks.bucket.download_object_to_file_object(path, buffer)
         buffer.seek(0)
         return pl.read_parquet(buffer)
 

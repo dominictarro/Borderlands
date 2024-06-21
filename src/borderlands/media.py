@@ -186,7 +186,7 @@ async def download_file(
                     if ctx[Media.file_type.name]
                     else enums.MediaType.UNKNOWN.value
                 )
-                path = create_media_key(ctx)
+                path = f"media/{create_media_key(ctx)}"
                 with tempfile.SpooledTemporaryFile(
                     prefix=ctx[Media.url_hash.name], suffix=".partial"
                 ) as fo:
@@ -195,7 +195,7 @@ async def download_file(
                     fo.seek(0)
                     # Assign the media key and type
                     ctx[Media.media_key.name] = (
-                        await blocks.media_bucket.upload_from_file_object(fo, path)
+                        await blocks.bucket.upload_from_file_object(fo, path)
                     )
                     ctx[Media.as_of_date.name] = datetime.datetime.utcnow()
         finally:

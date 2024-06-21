@@ -26,7 +26,7 @@ def get_asset(asset_name: str) -> bytes:
     bytes
         Asset
     """
-    return blocks.assets_bucket.read_path(asset_name)
+    return blocks.bucket.read_path(f"assets/{asset_name}")
 
 
 @task
