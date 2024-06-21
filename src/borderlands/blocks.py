@@ -2,30 +2,26 @@
 Storage blocks for the pipeline.
 """
 
-import asyncio
-
-from prefect.utilities.asyncutils import sync_compatible
 from prefect_aws import S3Bucket
+from prefecto.blocks import lazy_load
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class Blocks:
+class Blocks(BaseSettings):
     """Class for lazy loading Prefect Blocks."""
 
-    _bucket: S3Bucket | None = None
+    model_config = SettingsConfigDict(env_prefix="BORDERLANDS_")
+
+    bucket_block_name: str = Field(
+        default="s3-bucket-borderlands-core",
+        description="The S3 bucket web pages, images, tables, and other files are stored in.",
+    )
 
     @property
+    @lazy_load("bucket_block_name")
     def bucket(self) -> S3Bucket:
-        """Returns the bucket for the program. Loads if it isn't already."""
-        if not self._bucket:
-            self._bucket = S3Bucket.load("s3-bucket-borderlands-core")
-        return self._bucket
-
-    @sync_compatible
-    async def load(self):
-        """Load the blocks."""
-        self._bucket = (
-            (await self.bucket) if asyncio.iscoroutine(self.bucket) else self.bucket
-        )
+        """S3 bucket for the pipeline."""
 
 
 blocks = Blocks()
