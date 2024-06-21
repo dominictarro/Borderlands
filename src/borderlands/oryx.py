@@ -66,7 +66,7 @@ async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
     if unmapped:
         # Format the sections
         n, affected = len(unmapped), sum([case["count"] for case in unmapped])
-        id_ = create_table_artifact(
+        id_ = await create_table_artifact(
             unmapped,
             description=f"Unmapped country of production flags. {n} urls are affecting {affected} rows.",
         )
