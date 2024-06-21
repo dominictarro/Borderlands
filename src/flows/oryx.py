@@ -61,7 +61,7 @@ def oryx_flow() -> str:
         str: The key the DataFrame was uploaded to.
     """
     ctx: FlowRunContext = get_run_context()
-    blocks.load()
+
     # Convert Pendulum to Python datetime
     dt = datetime.datetime.fromisoformat(ctx.flow_run.start_time.isoformat()).replace(
         microsecond=0

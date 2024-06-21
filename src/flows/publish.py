@@ -15,7 +15,6 @@ from prefect import flow, task
 from prefect.blocks.system import Secret
 from prefect.context import get_run_context
 
-from borderlands.blocks import blocks
 from borderlands.definitions import oryx
 from borderlands.schema import Dataset, Tag
 from borderlands.schema.schema import FieldFilter
@@ -189,7 +188,7 @@ def update_kaggle_dataset(api: KaggleApi, metadata: dict, date: datetime.date):
 )
 def release_dataset_to_kaggle():
     """Make the Kaggle dataset."""
-    blocks.load()
+
     metadata = get_dataset_metadata()
     metadata = update_description(metadata)
     status = assess_dataset_status(api, metadata)
