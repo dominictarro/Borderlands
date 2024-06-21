@@ -69,7 +69,7 @@ async def alert_on_unmapped_country_flags(df: pl.DataFrame) -> None:
         urls = [
             case[EquipmentLoss.country_of_production_flag_url.name] for case in unmapped
         ]
-        n, affected = len(urls), sum([case["counts"] for case in unmapped])
+        n, affected = len(urls), sum([case["count"] for case in unmapped])
         logger.warning(
             f"Found {n} unmapped country of production flags affecting {affected} records."
         )
