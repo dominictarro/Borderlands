@@ -32,14 +32,14 @@ def upload(df: pl.DataFrame, dt: datetime.datetime) -> str:
     Returns:
         str: The key the DataFrame was uploaded to.
     """
-    key = create_oryx_key(dt, ext="parquet")
+    key = f"oryx/{create_oryx_key(dt, ext='parquet')}"
     df = df.select(definitions.EquipmentLoss.columns())
     df = df.sort(definitions.EquipmentLoss.columns(include=[definitions.Tag.dimension]))
     with io.BytesIO() as buffer:
         df.write_parquet(buffer, compression="zstd", compression_level=22)
         buffer.seek(0)
         blob = buffer.read()
-    return tasks.upload.fn(content=blob, key=key, bucket=blocks.oryx_bucket)
+    return tasks.upload.fn(content=blob, key=key, bucket=blocks.bucket)
 
 
 @flow(
