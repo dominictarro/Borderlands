@@ -211,33 +211,3 @@ def kaggle_credentials(
         value=key,
     )
     save(kaggle_username, downstream=[partial(save, kaggle_key)])
-
-
-@blocks.command()
-@click.option(
-    "-u",
-    "--url",
-    type=str,
-    default="env:SLACK_WEBHOOK_URL",
-    help="The Slack webhook URL. Prefix with 'env:' to use an environment variable.",
-)
-@click.option(
-    "-b",
-    "--block-name",
-    type=str,
-    default="slack-webhook-borderlands",
-    help="The name of the block.",
-)
-def slack_webhook(url: str, block_name: str):
-    """Create the Slack webhook block."""
-    from prefect_slack import SlackWebhook
-
-    if url.startswith("env:"):
-        env_var = url.split(":", maxsplit=1)[1]
-        url = os.getenv(env_var)
-
-    webhook = SlackWebhook(
-        _block_document_name=block_name,
-        url=url,
-    )
-    save(webhook)

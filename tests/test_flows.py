@@ -6,7 +6,7 @@ import pytest
 
 
 @pytest.mark.skip(reason="Causes crash in CI.")
-def test_oryx_flow(mock_buckets, mock_oryx_page_request, mock_slack_webhook):
+def test_oryx_flow(mock_buckets, mock_oryx_page_request):
     """Test the Oryx equipment loss staging flow."""
     from flows.oryx import oryx_flow
 

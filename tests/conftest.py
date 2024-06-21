@@ -13,11 +13,8 @@ import bs4
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
 from moto import mock_aws
-from prefect import task
 from prefect.testing.utilities import prefect_test_harness
 from prefect_aws import AwsCredentials, S3Bucket
-from prefect_slack import SlackWebhook
-from prefecto.logging import get_prefect_or_default_logger
 
 if TYPE_CHECKING:
     from borderlands.parser.article import ArticleParser
@@ -48,20 +45,10 @@ def bucket(credentials: AwsCredentials) -> S3Bucket:
     yield S3Bucket(bucket_name="borderlands-core", credentials=credentials)
 
 
-@pytest.fixture(scope="session")
-def slack_webhook() -> SlackWebhook:
-    """The Slack webhook."""
-    yield SlackWebhook(
-        _block_document_name="slack-webhook-borderlands",
-        url="https://hooks.slack.com/services/...",
-    )
-
-
 @pytest.fixture(autouse=True, scope="session")
-def prefect_db(slack_webhook, credentials, bucket):
+def prefect_db(credentials, bucket):
     """Sets the Prefect test harness for local pipeline testing."""
     with prefect_test_harness():
-        slack_webhook.save(name="slack-webhook-borderlands")
         credentials.save(name="aws-credentials-prefect")
         bucket.save(name="s3-bucket-borderlands-core")
         yield
@@ -108,24 +95,6 @@ def flag_url_mapper(test_data_path: Path) -> dict[str, str]:
     ) as fo:
         data = json.load(fo)
         return {k: v["Alpha-3"] for k, v in data.items()}
-
-
-@pytest.fixture(autouse=False, scope="function")
-def mock_slack_webhook(monkeypatch: MonkeyPatch):
-    """Mocks the Slack webhook."""
-    import prefect_slack.messages
-
-    @task
-    async def mock_send_incoming_webhook_message(*args, **kwds):
-        """Mocks the send_incoming_webhook_message function."""
-        get_prefect_or_default_logger().info("Mocked the Slack webhook")
-
-    monkeypatch.setattr(
-        prefect_slack.messages,
-        "send_incoming_webhook_message",
-        mock_send_incoming_webhook_message,
-    )
-    yield
 
 
 @pytest.fixture(autouse=False, scope="function")
