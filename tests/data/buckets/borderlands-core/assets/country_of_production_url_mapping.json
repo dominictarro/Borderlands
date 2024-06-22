@@ -184,5 +184,11 @@
         "Alpha-3": "CHE",
         "Official Name": "Swiss Confederation",
         "Common Name": "Switzerland"
+    },
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Flag_of_South_Korea_%281949%E2%80%931984%29.svg/23px-Flag_of_South_Korea_%281949%E2%80%931984%29.svg.png": {
+        "Alpha-2": "KR",
+        "Alpha-3": "KOR",
+        "Official Name": "Republic of Korea",
+        "Common Name": "South Korea"
     }
 }
